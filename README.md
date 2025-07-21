@@ -21,7 +21,7 @@
 
 ### Установка
 ```bash
-git clone git@github.com:.../millionaire.git
+git clone git@github.com:leffag/millionaire.git
 cd millionaire
 open Millionaire.xcodeproj
 ```
