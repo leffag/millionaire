@@ -8,11 +8,12 @@
 import SwiftUI
 
 struct GameScreen: View {
-    
-    let numberQuestion: String
-    let priceQuestion: String
-    let question: String
-    
+    @StateObject var viewModel: GameViewModel
+
+    //    MARK: Init
+    init() {
+        self._viewModel = StateObject(wrappedValue: GameViewModel())
+    }
     
     // MARK: - Body
     var body: some View {
@@ -20,18 +21,19 @@ struct GameScreen: View {
             ZStack {
                 Color.answerGradient3.ignoresSafeArea()
                 VStack {
+                    timerView()
+                        .padding(.top, 20)
                     
-                    Text(question)
-                        .font(.headline)
-                        .foregroundStyle(.white)
+                    questionTextView()
+                        .padding(.top, 20)
+                        .padding(.bottom, 20)
                     
-                    Spacer()
+                    
                     answerButtons()
                         .padding(.vertical, 20)
                     helpButtons()
                 }
-                .padding()
-                
+                .padding(20)
             }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -53,16 +55,37 @@ struct GameScreen: View {
     private func navTitle() -> some View {
         HStack {
             VStack {
-                Text("QUESTION #\(numberQuestion)")
+                Text("QUESTION #\(viewModel.numberQuestion)")
                     .font(.title)
                     .foregroundStyle(.white)
                 
                 
-                Text("$\(priceQuestion)")
+                Text("$\(viewModel.priceQuestion)")
                     .font(.title)
                     .foregroundStyle(.white)
                     .bold()
             }
+        }
+    }
+    
+    // MARK: - Timer View
+    private func timerView() -> some View {
+        ZStack {
+            Text(viewModel.duration)
+                .font(.title)
+                .foregroundStyle(.white)
+                .bold()
+        }
+    }
+    
+    // MARK: - Question View
+    private func questionTextView() -> some View {
+        VStack {
+            Text(viewModel.question?.question ?? "Как дела?")
+                .font(.headline)
+                .foregroundStyle(.white)
+                .bold()
+            Spacer()
         }
     }
     
@@ -75,7 +98,6 @@ struct GameScreen: View {
                 answerState: AnswerState.normal,
                 action: {}
             )
-            
             
             AnswerButton(
                 letter: AnswerLetter.b,
@@ -105,17 +127,17 @@ struct GameScreen: View {
         HStack(spacing: 20) {
             HelpButton(
                 type: .fiftyFifty,
-                action: {}
+                action: viewModel.fiftyFiftyButtonTap
             )
             
             HelpButton(
                 type: .audience,
-                action: {}
+                action: viewModel.audienceButtonTap
             )
             
             HelpButton(
                 type: .callToFriend,
-                action: {}
+                action: viewModel.callYourFriendButtonTap
             )
         }
     }
@@ -124,6 +146,6 @@ struct GameScreen: View {
 // MARK: - Preview
 #Preview {
     NavigationStack {
-        GameScreen(numberQuestion: "1", priceQuestion: "500", question: "Как дела?" )
+        GameScreen()
     }
 }

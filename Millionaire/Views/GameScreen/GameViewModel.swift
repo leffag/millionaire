@@ -8,13 +8,18 @@
 import Foundation
 
 final class GameViewModel: ObservableObject {
+    let networkService: NetworkService
     
-    var numberQuestion = 0
-    var totalQuestion: Int
+    let duration: String = "00:00"
+    let question: Question? = nil
+    let difficult: QuestionDifficulty = .easy
+    let numberQuestion = 0
+    let priceQuestion: String = "100"
+
     
-    
-    init(totalQuestion: Int) {
-        self.totalQuestion = totalQuestion
+//    MARK: Init
+    init(networkService: NetworkService = .shared) {
+        self.networkService = networkService
     }
     
     // MARK: - Game State
