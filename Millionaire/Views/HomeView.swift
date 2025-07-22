@@ -82,10 +82,36 @@ struct HomeView: View {
         }
         .navigationBarHidden(true)
         .fullScreenCover(isPresented: $showGame) {
-            GameView_(gameType: gameType)
+            // FIXME: GameView not implemented yet
+            // Покажет экран игры с новой/продолженной логикой игры
+            // GameView(gameType: gameType)
+            
+            // TODO: Implement GameView with gameType parameter
+            VStack {
+                HStack {
+                    Spacer()
+                    Button("Close") {
+                        showGame = false
+                    }
+                    .padding()
+                }
+                
+                Spacer()
+                
+                Text("Game Screen - \(gameType == .new ? "New Game" : "Continue")")
+                    .font(.title)
+                
+                Spacer()
+            }
+            .background(Color.black)
+            .foregroundColor(.white)
+            // TODO: Implement GameView with gameType parameter
+            
         }
         .sheet(isPresented: $showRules) {
-            RulesView()
+            // FIXME: RulesView not implemented yet
+            // Покажет правила игры и инструкции
+            // RulesView()
         }
     }
     
