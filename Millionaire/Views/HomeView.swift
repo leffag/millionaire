@@ -111,7 +111,7 @@ struct HomeView: View {
         .sheet(isPresented: $showRules) {
             // FIXME: RulesView not implemented yet
             // Покажет правила игры и инструкции
-            // RulesView()
+            RulesView()
         }
     }
     

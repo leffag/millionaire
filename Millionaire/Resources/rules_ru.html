@@ -13,10 +13,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, 
-                rgb(16, 14, 22) 0%, 
-                rgb(25, 35, 70) 50%, 
-                rgb(55, 76, 148) 100%);
+            background-color: #313445;
             min-height: 100vh;
             color: white;
             line-height: 1.6;
@@ -99,7 +96,7 @@
             border-collapse: collapse;
             margin: 20px 0;
             background: rgba(0,0,0,0.2);
-            border-radius: 10px;
+            
             overflow: hidden;
         }
 
@@ -136,7 +133,7 @@
             margin: 15px 0;
             padding: 15px;
             background: rgba(255,255,255,0.05);
-            border-radius: 10px;
+            
             border-left: 4px solid #FFD700;
         }
 
@@ -163,7 +160,7 @@
         .timer-warning {
             background: rgba(255,0,0,0.2);
             border: 1px solid rgba(255,0,0,0.3);
-            border-radius: 10px;
+            
             padding: 15px;
             margin: 20px 0;
             text-align: center;
@@ -217,7 +214,30 @@
                 padding: 20px;
             }
         }
-    </style>
+    
+        .table-wrapper {
+            margin-left: -20px;
+            margin-right: -20px;
+        }
+
+        .prize-table th,
+        .prize-table td {
+            padding: 12px 0;
+        }
+
+
+        .table-wrapper {
+            margin-left: -20px;
+            margin-right: -20px;
+        }
+
+        .prize-table th,
+        .prize-table td {
+            padding: 12px 0;
+            padding-left: 12px;
+        }
+
+</style>
 </head>
 <body>
     <div class="container">
@@ -235,7 +255,7 @@
 
         <div class="section">
             <h2>💰 Призовая лестница</h2>
-            <table class="prize-table">
+            <div class="table-wrapper"><table class="prize-table">
                 <thead>
                     <tr>
                         <th>Вопрос</th>
@@ -261,6 +281,7 @@
                     <tr class="final-prize"><td>15</td><td>1 000 000 ₽</td><td>🏆 ПОБЕДА!</td></tr>
                 </tbody>
             </table>
+            </div></div>
         </div>
 
         <div class="section">
