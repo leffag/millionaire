@@ -16,6 +16,29 @@ enum HomeViewMode {
 enum GameType {
     case new
     case continued
+    
+    var buttonTitle: String {
+        switch self {
+        case .new:
+            return "New game"
+        case .continued:
+            return "Continue game"
+        }
+    }
+}
+
+enum ButtonStyle {
+    case primary
+    case regular
+    
+    var imageName: String {
+        switch self {
+        case .primary:
+            return "PrimaryButton"
+        case .regular:
+            return "RegularButton"
+        }
+    }
 }
 
 struct HomeView: View {
@@ -112,31 +135,19 @@ struct HomeView: View {
             }
             
             if viewMode != .notCompletedGame {
-                showButton(
-                    title: "New game",
-                    imageName: "PrimaryButton",
-                    action: {
-                        gameType = .new
-                        showGame = true
-                    }
+                gameButton(
+                    for: .new,
+                    style: .primary
                 )
             }
             if viewMode == .notCompletedGame {
-                showButton(
-                    title: "Continue game",
-                    imageName: "PrimaryButton",
-                    action: {
-                        gameType = .continued
-                        showGame = true
-                    }
+                gameButton(
+                    for: .continued,
+                    style: .primary
                 )
-                showButton(
-                    title: "New game",
-                    imageName: "RegularButton",
-                    action: {
-                        gameType = .new
-                        showGame = true
-                    }
+                gameButton(
+                    for: .new,
+                    style: .regular
                 )
             }
             
@@ -147,15 +158,18 @@ struct HomeView: View {
     }
     
     @ViewBuilder
-    private func showButton(title: String, imageName: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+    private func gameButton(for type: GameType, style: ButtonStyle) -> some View {
+        Button(action: {
+            self.gameType = type
+            showGame = true
+        }) {
             ZStack {
-                Image(imageName)
+                Image(style.imageName)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(height: 60)
                 
-                Text(title)
+                Text(type.buttonTitle)
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(.white)
