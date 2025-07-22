@@ -8,15 +8,23 @@
 import SwiftUI
 
 struct GameScreen: View {
-
+    
+    let numberQuestion: String
+    let priceQuestion: String
+    let question: String
+    
     
     // MARK: - Body
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.answerGradient3.ignoresSafeArea()
-                
                 VStack {
+                    
+                    Text(question)
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                    
                     Spacer()
                     answerButtons()
                         .padding(.vertical, 20)
@@ -24,6 +32,36 @@ struct GameScreen: View {
                 }
                 .padding()
                 
+            }
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                navTitle()
+            }
+            
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {}) {
+                    Image(ImageResource.iconLevels)
+                }
+            }
+        }
+    }
+    
+    
+    // MARK: - NavTitle
+    private func navTitle() -> some View {
+        HStack {
+            VStack {
+                Text("QUESTION #\(numberQuestion)")
+                    .font(.title)
+                    .foregroundStyle(.white)
+                
+                
+                Text("$\(priceQuestion)")
+                    .font(.title)
+                    .foregroundStyle(.white)
+                    .bold()
             }
         }
     }
@@ -63,7 +101,7 @@ struct GameScreen: View {
     }
     
     // MARK: - Help Buttons
-   private func helpButtons() -> some View {
+    private func helpButtons() -> some View {
         HStack(spacing: 20) {
             HelpButton(
                 type: .fiftyFifty,
@@ -86,6 +124,6 @@ struct GameScreen: View {
 // MARK: - Preview
 #Preview {
     NavigationStack {
-        GameScreen()
+        GameScreen(numberQuestion: "1", priceQuestion: "500", question: "Как дела?" )
     }
 }
