@@ -132,7 +132,7 @@ struct HomeView: View {
                 )
                 showButton(
                     title: "New game",
-                    imageName: "PrimaryButton",
+                    imageName: "RegularButton",
                     action: {
                         gameType = .new
                         showGame = true
