@@ -190,8 +190,7 @@ extension Button {
     
     /// Применяет стиль кнопки миллионера с изображениями
     func millionaireStyle(
-        _ variant: MillionaireButtonStyle.Variant = .primary,
-        isEnabled: Bool = true
+        _ variant: MillionaireButtonStyle.Variant = .primary
     ) -> some View {
         self.buttonStyle(
             MillionaireButtonStyle(variant: variant)
@@ -202,8 +201,7 @@ extension Button {
     func millionaireAnswerStyle(
         _ variant: MillionaireButtonStyle.Variant,
         letter: String,
-        answerText: String,
-        isEnabled: Bool = true
+        answerText: String
     ) -> some View {
         self.buttonStyle(
             MillionaireButtonStyle(
@@ -269,7 +267,7 @@ extension Button {
         
         // Отключенная кнопка через disabled(_:)
         Button("Disabled Button") { }
-            .millionaireStyle(.primary, isEnabled: false)
+            .millionaireStyle(.primary)
             .disabled(true) // Используем стандартный SwiftUI API!
     }
     .padding()
