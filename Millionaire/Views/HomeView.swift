@@ -48,8 +48,7 @@ struct HomeView: View {
     
     var body: some View {
         ZStack {
-            // Фоновый градиент
-            backgroundGradient
+            backgroundImage
             
             // Кнопка Rules
             VStack {
@@ -98,9 +97,7 @@ struct HomeView: View {
             
         }
         .sheet(isPresented: $showRules) {
-            // FIXME: RulesView not implemented yet
-            // Покажет правила игры и инструкции
-            // RulesView()
+            RulesView()
         }
     }
     
@@ -108,16 +105,12 @@ struct HomeView: View {
     // MARK: - View Components
     
     @ViewBuilder
-    private var backgroundGradient: some View {
-        LinearGradient(
-            colors: [
-                Color(red: 0.063, green: 0.055, blue: 0.086),
-                Color(red: 0.216, green: 0.298, blue: 0.58)
-            ],
-            startPoint: UnitPoint(x: 0.5, y: 0.75),
-            endPoint: UnitPoint(x: 0.5, y: 0.25)
-        )
-        .ignoresSafeArea()
+    private var backgroundImage: some View {
+        Image("Background")
+            .resizable()
+            .aspectRatio(contentMode: .fill)
+            .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+            .ignoresSafeArea(.all)
     }
     
     @ViewBuilder
