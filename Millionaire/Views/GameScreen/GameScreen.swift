@@ -36,6 +36,7 @@ struct GameScreen: View {
                     helpButtons()
                 }
                 .padding(20)
+                .allowsHitTesting(viewModel.selectedAnswer == nil)
             }
         }
         .alert(
