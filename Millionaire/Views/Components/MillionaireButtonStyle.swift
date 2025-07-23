@@ -21,17 +21,14 @@ struct MillionaireButtonStyle: ButtonStyle {
     // MARK: - Properties
     
     let variant: Variant
-    let isEnabled: Bool
-    
     let answerContent: AnswerButtonContent?
+    @Environment(\.isEnabled) private var isEnabled
     
     // MARK: - Initialization
     
     init(variant: Variant = .primary,
-         isEnabled: Bool = true,
          answerContent: AnswerButtonContent? = nil) {
         self.variant = variant
-        self.isEnabled = isEnabled
         self.answerContent = answerContent
     }
     
@@ -68,7 +65,6 @@ struct MillionaireButtonStyle: ButtonStyle {
         )
         .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
         .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
-        .disabled(!isEnabled)
     }
     
     // MARK: - Private Methods
@@ -198,10 +194,7 @@ extension Button {
         isEnabled: Bool = true
     ) -> some View {
         self.buttonStyle(
-            MillionaireButtonStyle(
-                variant: variant,
-                isEnabled: isEnabled
-            )
+            MillionaireButtonStyle(variant: variant)
         )
     }
     
@@ -215,7 +208,6 @@ extension Button {
         self.buttonStyle(
             MillionaireButtonStyle(
                 variant: variant,
-                isEnabled: isEnabled,
                 answerContent: AnswerButtonContent(letter: letter, text: answerText)
             )
         )
@@ -274,9 +266,11 @@ extension Button {
                 .millionairePrizeStyle(isActive: true)
         }
         .padding(.horizontal)
-        // Отключенная кнопка
+        
+        // Отключенная кнопка через disabled(_:)
         Button("Disabled Button") { }
             .millionaireStyle(.primary, isEnabled: false)
+            .disabled(true) // Используем стандартный SwiftUI API!
     }
     .padding()
     .background(
