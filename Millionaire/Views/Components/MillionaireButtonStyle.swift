@@ -6,6 +6,12 @@
 //
 import SwiftUI
 
+// MARK: - Answer Button Content Model
+struct AnswerButtonContent {
+    let letter: String  // "A", "B", "C", "D"
+    let text: String    // Текст ответа
+}
+
 // MARK: - Millionaire Button Style (Image-Based Only)
 
 /// Кастомный стиль кнопки для игры "Кто хочет стать миллионером?"
@@ -17,11 +23,16 @@ struct MillionaireButtonStyle: ButtonStyle {
     let variant: Variant
     let isEnabled: Bool
     
+    let answerContent: AnswerButtonContent?
+    
     // MARK: - Initialization
     
-    init(variant: Variant = .primary, isEnabled: Bool = true) {
+    init(variant: Variant = .primary,
+         isEnabled: Bool = true,
+         answerContent: AnswerButtonContent? = nil) {
         self.variant = variant
         self.isEnabled = isEnabled
+        self.answerContent = answerContent
     }
     
     // MARK: - ButtonStyle Implementation
@@ -32,13 +43,19 @@ struct MillionaireButtonStyle: ButtonStyle {
             imageBackground(for: configuration)
             
             // Контент кнопки
-            configuration.label
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(textColor)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 16)
+            if let answerContent = answerContent, variant.isAnswerButton {
+                // Специальная разметка для кнопок ответов
+                answerButtonContent(answerContent)
+            } else {
+                // Обычный контент для других кнопок
+                configuration.label
+                    .font(.millionaireMenuButton) // Используем кастомный шрифт
+                    .fontWeight(.semibold)
+                    .foregroundColor(textColor)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
+            }
         }
         .frame(maxWidth: .infinity)
         .frame(height: 60)
@@ -74,6 +91,27 @@ struct MillionaireButtonStyle: ButtonStyle {
                     endPoint: .bottomTrailing
                 )
             )
+    }
+    
+    @ViewBuilder
+    private func answerButtonContent(_ content: AnswerButtonContent) -> some View {
+        HStack(alignment: .center) {
+            // Первая строка - желтая буква (A, B, C, D)
+            Text(content.letter)
+                .millionaireAnswerLetterStyle()
+                .padding(.leading, 24)
+            
+            // Вторая строка - белый текст ответа
+            Text(content.text)
+                .millionaireAnswerTextStyle()
+                .multilineTextAlignment(.leading)
+                .padding(.leading, 10)
+            
+            Spacer()
+        }
+        
+        .frame(maxWidth: .infinity)
+        .padding()
     }
     
     private var textColor: Color {
@@ -138,6 +176,15 @@ extension MillionaireButtonStyle {
                 return "AnswerWrong"
             }
         }
+        
+        var isAnswerButton: Bool {
+            switch self {
+            case .answerRegular, .answerCorrect, .answerWrong:
+                return true
+            case .primary, .regular:
+                return false
+            }
+        }
     }
 }
 
@@ -157,12 +204,33 @@ extension Button {
             )
         )
     }
+    
+    /// Применяет стиль кнопки ответа с двухстрочным текстом
+    func millionaireAnswerStyle(
+        _ variant: MillionaireButtonStyle.Variant,
+        letter: String,
+        answerText: String,
+        isEnabled: Bool = true
+    ) -> some View {
+        self.buttonStyle(
+            MillionaireButtonStyle(
+                variant: variant,
+                isEnabled: isEnabled,
+                answerContent: AnswerButtonContent(letter: letter, text: answerText)
+            )
+        )
+    }
 }
 
 // MARK: - Preview
 
 #Preview("Button Variants with Images") {
     VStack(spacing: 20) {
+        
+        // Заголовок с кастомным шрифтом
+        Text("Кто хочет стать миллионером?")
+            .millionaireTitleStyle()
+        
         // Главное меню
         Button("Primary Button") { }
             .millionaireStyle(.primary)
@@ -173,19 +241,39 @@ extension Button {
         // Кнопки ответов
         VStack(spacing: 10) {
             Text("Answer Buttons:")
-                .foregroundColor(.white)
-                .font(.headline)
+                .millionaireQuestionStyle()
             
-            Button("A) Regular Answer") { }
-                .millionaireStyle(.answerRegular)
+            Button {} label: {
+                EmptyView()
+            }
+            .millionaireAnswerStyle(.answerRegular, letter: "A:", answerText: "Правильный ответ на вопрос")
             
-            Button("B) Correct Answer") { }
-                .millionaireStyle(.answerCorrect)
+            Button {} label: {
+                EmptyView()
+            }
+            .millionaireAnswerStyle(.answerCorrect, letter: "B:", answerText: "Это правильный ответ")
             
-            Button("C) Wrong Answer") { }
-                .millionaireStyle(.answerWrong)
+            Button {} label: {
+                EmptyView()
+            }
+            .millionaireAnswerStyle(.answerWrong, letter: "C:", answerText: "Неправильный вариант")
+            
+            Button {} label: {
+                EmptyView()
+            }
+            .millionaireAnswerStyle(.answerRegular, letter: "D:", answerText: "Еще один вариант ответа")
         }
-        
+        // Дополнительные элементы с кастомными шрифтами
+        HStack {
+            Text("Таймер: 30")
+                .millionaireTimerStyle()
+            
+            Spacer()
+            
+            Text("32,000 руб.")
+                .millionairePrizeStyle(isActive: true)
+        }
+        .padding(.horizontal)
         // Отключенная кнопка
         Button("Disabled Button") { }
             .millionaireStyle(.primary, isEnabled: false)
