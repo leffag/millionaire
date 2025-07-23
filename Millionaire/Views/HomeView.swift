@@ -27,13 +27,16 @@ enum GameType {
     }
 }
 
+enum NavigationRoute: Hashable {
+    case loading
+    case game(GameSession)
+}
+
 // MARK: - Используем напрямую MillionaireButtonStyle.Variant
 typealias ButtonVariant = MillionaireButtonStyle.Variant
 
 struct HomeView: View {
-    @State private var showGame = false
     @State private var showRules = false
-    @State private var gameType: GameType = .new
     
     // Режим отображения экрана
     @State private var viewMode: HomeViewMode = .firstStart
@@ -41,66 +44,60 @@ struct HomeView: View {
     // Данные для отображения
     @State private var bestScore: Int = 15000
     
+    @State private var navigationPath: [NavigationRoute] = []
+    
     init(viewMode: HomeViewMode = .firstStart, bestScore: Int = 0) {
         self._viewMode = State(initialValue: viewMode)
         self._bestScore = State(initialValue: bestScore)
     }
     
     var body: some View {
-        ZStack {
-            // Фоновый градиент
-            backgroundGradient
-            
-            // Кнопка Rules
-            VStack {
-                helpButton
-                Spacer()
-            }
-            
-            VStack {
-                Spacer()
+        NavigationStack(path: $navigationPath) {
+            ZStack {
+                // Фоновый градиент
+                backgroundGradient
                 
-                // Лого и название игры из ресурсов
-                logoSection
-                
-                Spacer()
-                
-                // Кнопка New Game внизу
-                actionButtons
-            }
-        }
-        .navigationBarHidden(true)
-        .fullScreenCover(isPresented: $showGame) {
-            // FIXME: GameView not implemented yet
-            // Покажет экран игры с новой/продолженной логикой игры
-            // GameView(gameType: gameType)
-            
-            // TODO: Implement GameView with gameType parameter
-            VStack {
-                HStack {
+                // Кнопка Rules
+                VStack {
+                    helpButton
                     Spacer()
-                    Button("Close") {
-                        showGame = false
-                    }
-                    .padding()
                 }
                 
-                Spacer()
-                
-                Text("Game Screen - \(gameType == .new ? "New Game" : "Continue")")
-                    .font(.title)
-                
-                Spacer()
+                VStack {
+                    Spacer()
+                    
+                    // Лого и название игры из ресурсов
+                    logoSection
+                    
+                    Spacer()
+                    
+                    // Кнопка New Game внизу
+                    actionButtons
+                }
             }
-            .background(Color.black)
-            .foregroundColor(.white)
-            // TODO: Implement GameView with gameType parameter
-            
-        }
-        .sheet(isPresented: $showRules) {
-            // FIXME: RulesView not implemented yet
-            // Покажет правила игры и инструкции
-            // RulesView()
+            .navigationBarHidden(true)
+            .sheet(isPresented: $showRules) {
+                // FIXME: RulesView not implemented yet
+                // Покажет правила игры и инструкции
+                // RulesView()
+            }
+            .navigationDestination(for: NavigationRoute.self) { route in
+                switch route {
+                case .game(let session):
+                    GameScreen(
+                        viewModel: GameViewModel(initialSession: session)
+                    )
+                    
+                case .loading:
+                    ZStack {
+                        // Фоновый градиент
+                        backgroundGradient
+                        
+                        ProgressView()
+                            .tint(.white)
+                    }
+                }
+            }
         }
     }
     
@@ -175,8 +172,9 @@ struct HomeView: View {
     @ViewBuilder
     private func gameButton(for type: GameType, variant: ButtonVariant) -> some View {
         Button(action: {
-            self.gameType = type
-            showGame = true
+            Task {
+                await startGame(type: type)
+            }
         }) {
             Text(type.buttonTitle)
         }
@@ -197,6 +195,34 @@ struct HomeView: View {
                     .fontWeight(.semibold)
                     .foregroundColor(.white)
             }
+        }
+    }
+    
+    private func startGame(type: GameType) async {
+        navigationPath = [.loading]
+        
+        switch type {
+        case .new:
+            do {
+                let questions = try await NetworkService.shared.fetchQuestions(from: QuestionsAPI.baseURL)
+                
+                guard let initialSession = GameSession(questions: questions) else {
+                    throw StartGameFailure.invalidQuestions
+                }
+                
+                navigationPath = [.game(initialSession)]
+            }
+            catch {
+                navigationPath = []
+            }
+            
+        case .continued:
+            // FIXME: Реализовать продолжение игры
+            navigationPath = []
+        }
+        
+        enum StartGameFailure: Error {
+            case invalidQuestions
         }
     }
     

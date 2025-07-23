@@ -7,13 +7,18 @@
 
 import Foundation
 
-struct GameSession {
+enum AnswerResult {
+    case correct
+    case incorrect
+}
+
+struct GameSession: Hashable {
     let questions: [Question]
     
-    var isFinished: Bool
-    var currentQuestionIndex: Int
-    var score: Int
-    var lifelines: Set<Lifeline>
+    private(set) var isFinished: Bool
+    private(set) var currentQuestionIndex: Int
+    private(set) var score: Int
+    private(set) var lifelines: Set<Lifeline>
     
     var currentQuestion: Question {
         questions[currentQuestionIndex]
@@ -24,7 +29,7 @@ struct GameSession {
         isFinished: Bool = false,
         currentQuestionIndex: Int = 0,
         score: Int = 0,
-        lifelines: Set<Lifeline> = [.fiftyFifty, .callAFriend, .audience]
+        lifelines: Set<Lifeline> = [.fiftyFifty, .callToFriend, .audience]
     ) {
         guard
             questions.count == 15,
@@ -40,14 +45,13 @@ struct GameSession {
         self.lifelines = lifelines
     }
     
-    mutating func answer(answer: String) {
+    mutating func answer(answer: String) -> AnswerResult? {
         guard !isFinished else {
-            return
+            return nil
         }
         
         if answer == currentQuestion.correctAnswer {
             score += ScoreLogic.questionValues[currentQuestionIndex]
-            currentQuestionIndex += 1
             
             let hasNextQuestion = currentQuestionIndex + 1 < questions.count
             
@@ -57,9 +61,11 @@ struct GameSession {
                 isFinished = true
             }
             
+            return .correct
         } else {
-            score = ScoreLogic.findClosestCheckpointScore(questionIndex: currentQuestionIndex)
+            score = ScoreLogic.findClosestCheckpointScoreIndex(questionIndex: currentQuestionIndex)
             isFinished = true
+            return .incorrect
         }
     }
     

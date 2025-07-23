@@ -28,7 +28,14 @@ enum ScoreLogic {
     
     static let checkpointIndices: [Int] = [4, 9, 14]
     
-    static func findClosestCheckpointScore(questionIndex: Int) -> Int {
-        return checkpointIndices.last { $0 < questionIndex } ?? 0
+    static func findClosestCheckpointScoreIndex(questionIndex: Int) -> Int {
+        let checkpointIndex = checkpointIndices.last { $0 < questionIndex }
+        
+        if let checkpointIndex {
+            return questionValues[checkpointIndex]
+        }
+        else {
+            return 0
+        }
     }
 }
