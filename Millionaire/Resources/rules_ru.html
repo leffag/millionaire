@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Правила игры - Кто хочет стать миллионером?</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #313445;
+            min-height: 100vh;
+            color: white;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 8px 32px rgba(255, 215, 0, 0.3);
+        }
+
+        .section {
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        .section h2 {
+            color: #FFD700;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section h3 {
+            color: #FFA500;
+            font-size: 1.2rem;
+            margin: 20px 0 10px 0;
+        }
+
+        .prize-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: rgba(0,0,0,0.2);
+            
+            overflow: hidden;
+        }
+
+        .prize-table th,
+        .prize-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .prize-table th {
+            background: rgba(255,215,0,0.2);
+            color: #FFD700;
+            font-weight: bold;
+        }
+
+        .safe-amount {
+            background: rgba(0,255,0,0.2) !important;
+            color: #90EE90;
+            font-weight: bold;
+        }
+
+        .final-prize {
+            background: rgba(255,215,0,0.3) !important;
+            color: #FFD700;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .lifeline {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            
+            border-left: 4px solid #FFD700;
+        }
+
+        .lifeline-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .highlight {
+            background: rgba(255,215,0,0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #FFD700;
+            font-weight: bold;
+        }
+
+        .timer-warning {
+            background: rgba(255,0,0,0.2);
+            border: 1px solid rgba(255,0,0,0.3);
+            
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .good-luck {
+            text-align: center;
+            font-size: 1.3rem;
+            margin: 40px 0;
+            padding: 25px;
+            background: linear-gradient(45deg, rgba(255,215,0,0.2), rgba(255,165,0,0.2));
+            border-radius: 15px;
+            border: 2px solid rgba(255,215,0,0.3);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .sparkle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #FFD700;
+            border-radius: 50%;
+            animation: sparkle 2s infinite;
+        }
+
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 15px;
+            }
+            
+            .title {
+                font-size: 2rem;
+            }
+            
+            .section {
+                padding: 20px;
+            }
+        }
+    
+        .table-wrapper {
+            margin-left: -20px;
+            margin-right: -20px;
+        }
+
+        .prize-table th,
+        .prize-table td {
+            padding: 12px 0;
+        }
+
+
+        .table-wrapper {
+            margin-left: -20px;
+            margin-right: -20px;
+        }
+
+        .prize-table th,
+        .prize-table td {
+            padding: 12px 0;
+            padding-left: 12px;
+        }
+
+</style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">?</div>
+            <h1 class="title">КТО ХОЧЕТ СТАТЬ МИЛЛИОНЕРОМ?</h1>
+            <p class="subtitle">Правила игры и руководство к действию</p>
+        </div>
+
+        <div class="section">
+            <h2>🎯 Цель игры</h2>
+            <p>Ваша задача — правильно ответить на <span class="highlight">15 вопросов</span> различной сложности и выиграть главный приз в размере <span class="highlight">1 000 000 рублей</span>!</p>
+            <p>Вопросы становятся все сложнее по мере продвижения к финалу. Каждый правильный ответ приносит вам больше денег.</p>
+        </div>
+
+        <div class="section">
+            <h2>💰 Призовая лестница</h2>
+            <div class="table-wrapper"><table class="prize-table">
+                <thead>
+                    <tr>
+                        <th>Вопрос</th>
+                        <th>Призовая сумма</th>
+                        <th>Особенности</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>100 ₽</td><td></td></tr>
+                    <tr><td>2</td><td>200 ₽</td><td></td></tr>
+                    <tr><td>3</td><td>300 ₽</td><td></td></tr>
+                    <tr><td>4</td><td>500 ₽</td><td></td></tr>
+                    <tr class="safe-amount"><td>5</td><td>1 000 ₽</td><td>🔒 Несгораемая сумма</td></tr>
+                    <tr><td>6</td><td>2 000 ₽</td><td></td></tr>
+                    <tr><td>7</td><td>4 000 ₽</td><td></td></tr>
+                    <tr><td>8</td><td>8 000 ₽</td><td></td></tr>
+                    <tr><td>9</td><td>16 000 ₽</td><td></td></tr>
+                    <tr class="safe-amount"><td>10</td><td>32 000 ₽</td><td>🔒 Несгораемая сумма</td></tr>
+                    <tr><td>11</td><td>64 000 ₽</td><td></td></tr>
+                    <tr><td>12</td><td>125 000 ₽</td><td></td></tr>
+                    <tr><td>13</td><td>250 000 ₽</td><td></td></tr>
+                    <tr><td>14</td><td>500 000 ₽</td><td></td></tr>
+                    <tr class="final-prize"><td>15</td><td>1 000 000 ₽</td><td>🏆 ПОБЕДА!</td></tr>
+                </tbody>
+            </table>
+            </div></div>
+        </div>
+
+        <div class="section">
+            <h2>🛡️ Несгораемые суммы</h2>
+            <p>В игре есть три <span class="highlight">несгораемые суммы</span>:</p>
+            <ul style="margin: 15px 0 0 20px;">
+                <li><strong>1 000 ₽</strong> — за 5-й вопрос</li>
+                <li><strong>32 000 ₽</strong> — за 10-й вопрос</li>
+                <li><strong>1 000 000 ₽</strong> — финальный приз</li>
+            </ul>
+            <p style="margin-top: 15px;">Если вы ошибетесь, то получите последнюю достигнутую несгораемую сумму, а не потеряете всё.</p>
+        </div>
+
+        <div class="section">
+            <h2>⏱️ Правило времени</h2>
+            <div class="timer-warning">
+                <strong>⚠️ У вас есть только 30 секунд на каждый ответ!</strong>
+            </div>
+            <p>Если время истечет, игра автоматически завершится, и вы получите последнюю несгораемую сумму или ноль, если не дошли до первой несгораемой суммы.</p>
+        </div>
+
+        <div class="section">
+            <h2>🆘 Подсказки (Lifelines)</h2>
+            <p>У вас есть <span class="highlight">три подсказки</span>, каждую можно использовать только один раз за игру:</p>
+            
+            <div class="lifeline">
+                <div class="lifeline-icon">50</div>
+                <div>
+                    <h3>50/50</h3>
+                    <p>Убираются два неправильных варианта ответа, оставляя вам выбор из двух.</p>
+                </div>
+            </div>
+
+            <div class="lifeline">
+                <div class="lifeline-icon">👥</div>
+                <div>
+                    <h3>Помощь зала</h3>
+                    <p>Зрители голосуют за правильный ответ. Вероятность правильного ответа: <span class="highlight">70%</span> для легких вопросов, <span class="highlight">50%</span> для сложных.</p>
+                </div>
+            </div>
+
+            <div class="lifeline">
+                <div class="lifeline-icon">📞</div>
+                <div>
+                    <h3>Звонок другу</h3>
+                    <p>Ваш друг поможет с ответом. Вероятность правильного ответа: <span class="highlight">80%</span>.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🚪 Забрать деньги</h2>
+            <p>В любой момент игры (кроме процесса ответа на вопрос) вы можете нажать кнопку <span class="highlight">"Забрать деньги"</span> и уйти с текущим выигрышем.</p>
+            <p>Это безопасный способ зафиксировать свою прибыль, если вы не уверены в следующем вопросе.</p>
+        </div>
+
+        <div class="section">
+            <h2>📊 Уровни сложности</h2>
+            <h3>🟢 Легкие вопросы (1-5)</h3>
+            <p>Общеизвестные факты, базовые знания школьной программы.</p>
+            
+            <h3>🟡 Средние вопросы (6-10)</h3>
+            <p>Требуют более глубоких знаний в различных областях.</p>
+            
+            <h3>🔴 Сложные вопросы (11-15)</h3>
+            <p>Специализированные знания, редкие факты, требующие эрудиции.</p>
+        </div>
+
+        <div class="good-luck">
+            <strong>🍀 Удачи в игре! Помните: знания — ваше главное оружие на пути к миллиону! 🎯</strong>
+        </div>
+    </div>
+
+    <script>
+        // Добавляем блестящие частицы
+        function createSparkle() {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.style.left = Math.random() * window.innerWidth + 'px';
+            sparkle.style.top = Math.random() * window.innerHeight + 'px';
+            sparkle.style.animationDelay = Math.random() * 2 + 's';
+            document.body.appendChild(sparkle);
+            
+            setTimeout(() => {
+                sparkle.remove();
+            }, 2000);
+        }
+
+        // Создаем блестки каждые 500мс
+        setInterval(createSparkle, 500);
+    </script>
+</body>
+</html>

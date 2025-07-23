@@ -27,19 +27,8 @@ enum GameType {
     }
 }
 
-enum ButtonStyle {
-    case primary
-    case regular
-    
-    var imageName: String {
-        switch self {
-        case .primary:
-            return "PrimaryButton"
-        case .regular:
-            return "RegularButton"
-        }
-    }
-}
+// MARK: - Используем напрямую MillionaireButtonStyle.Variant
+typealias ButtonVariant = MillionaireButtonStyle.Variant
 
 struct HomeView: View {
     @State private var showGame = false
@@ -163,17 +152,17 @@ struct HomeView: View {
             if viewMode != .notCompletedGame {
                 gameButton(
                     for: .new,
-                    style: .primary
+                    variant: .primary
                 )
             }
             if viewMode == .notCompletedGame {
                 gameButton(
                     for: .continued,
-                    style: .primary
+                    variant: .primary
                 )
                 gameButton(
                     for: .new,
-                    style: .regular
+                    variant: .regular
                 )
             }
             
@@ -182,29 +171,17 @@ struct HomeView: View {
         }
         .padding(.horizontal, 40)
     }
-    
+  
     @ViewBuilder
-    private func gameButton(for type: GameType, style: ButtonStyle) -> some View {
+    private func gameButton(for type: GameType, variant: ButtonVariant) -> some View {
         Button(action: {
             self.gameType = type
             showGame = true
         }) {
-            ZStack {
-                Image(style.imageName)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(height: 60)
-                
-                Text(type.buttonTitle)
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-            }
+            Text(type.buttonTitle)
         }
+        .millionaireStyle(variant, isEnabled: true)
         .frame(maxWidth: .infinity)
-        .shadow(color: Color.yellow.opacity(0.5), radius: 10, x: 0, y: 5)
-        .scaleEffect(showGame ? 0.95 : 1.0)
-        .animation(.easeInOut(duration: 0.1), value: showGame)
     }
     
     @ViewBuilder
