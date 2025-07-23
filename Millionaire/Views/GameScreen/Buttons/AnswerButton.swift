@@ -33,55 +33,55 @@ enum AnswerState {
     }
 }
 
-// MARK: - Answer Button View
-struct AnswerButton: View {
-    let letter: AnswerLetter
-    let text: String
-    let answerState: AnswerState
-    var action: () -> Void
-    
-    @State private var isUsed = false
-    
-    // MARK: - Body
-    var body: some View {
-        Button(action: buttonAction) {
-            HStack {
-                Text("\(letter):")
-                    .font(.headline)
-                    .bold()
-                    .foregroundStyle(.buttonGradientColorDark)
-                
-                Text(text)
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                
-                Spacer()
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 20)
-            .background(
-                MillionaireShapeView(fillColor: answerState.color)
-            )
-        }
-        .disabled(isUsed)
-        .buttonStyle(.plain)
-    }
-    
-    // MARK: - Helper Methods
-    private func buttonAction() {
-        guard !isUsed else { return }
-        isUsed = true
-        action()
-    }
-    
-}
-
-// MARK: - Preview
-#Preview {
-    AnswerButton(
-        letter: .a,
-        text: "Как дела?",
-        answerState: .normal,
-        action: {}
-    )
-}
+//// MARK: - Answer Button View
+//struct AnswerButton: View {
+//    let letter: AnswerLetter
+//    let text: String
+//    let answerState: AnswerState
+//    var action: () -> Void
+//    
+//    @State private var isUsed = false
+//    
+//    // MARK: - Body
+//    var body: some View {
+//        Button(action: buttonAction) {
+//            HStack {
+//                Text("\(letter):")
+//                    .font(.headline)
+//                    .bold()
+//                    .foregroundStyle(.buttonGradientColorDark)
+//                
+//                Text(text)
+//                    .font(.headline)
+//                    .foregroundStyle(.white)
+//                
+//                Spacer()
+//            }
+//            .padding(.horizontal, 20)
+//            .padding(.vertical, 20)
+//            .background(
+//                MillionaireShapeView(fillColor: answerState.color)
+//            )
+//        }
+//        .disabled(isUsed)
+//        .buttonStyle(.plain)
+//    }
+//    
+//    // MARK: - Helper Methods
+//    private func buttonAction() {
+//        guard !isUsed else { return }
+//        isUsed = true
+//        action()
+//    }
+//    
+//}
+//
+//// MARK: - Preview
+//#Preview {
+//    AnswerButton(
+//        letter: .a,
+//        text: "Как дела?",
+//        answerState: .normal,
+//        action: {}
+//    )
+//}

@@ -10,9 +10,11 @@ import SwiftUI
 struct GameScreen: View {
     @StateObject var viewModel: GameViewModel
     @State private var showAlreadyAnsweredAlert = false
+    @State private var gameType: GameType
     
     //    MARK: Init
-    init() {
+    init(gameType: GameType) {
+        self.gameType = gameType
         self._viewModel = StateObject(wrappedValue: GameViewModel())
     }
     
@@ -102,19 +104,35 @@ struct GameScreen: View {
     private func answerButtons() -> some View {
         VStack(spacing: 20) {
             ForEach(viewModel.answers) { answer in
-                AnswerButton(
-                    letter: AnswerLetter.allCases[viewModel.answers.firstIndex(where: { $0.id == answer.id }) ?? 0],
-                    text: answer.text,
-                    answerState: viewModel.answerStates[answer.id] ?? .normal,
-                    action: {
-                        if viewModel.selectedAnswer == nil {
-                            viewModel.selectAnswer(answer)
-                        } else {
-                            let generator = UINotificationFeedbackGenerator()
-                            generator.notificationOccurred(.error)
-                            showAlreadyAnsweredAlert = true
-                        }
+                let index = viewModel.answers.firstIndex(where: { $0.id == answer.id }) ?? 0
+                let letter = AnswerLetter.allCases[index]
+                let state = viewModel.answerStates[answer.id] ?? .normal
+                let isDisabled = viewModel.selectedAnswer != nil
+
+                Button {
+                    if viewModel.selectedAnswer == nil {
+                        viewModel.selectAnswer(answer)
+                    } else {
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.error)
+                        showAlreadyAnsweredAlert = true
                     }
+                } label: {
+                    HStack {
+                        Text("\(letter.rawValue):")
+                            .bold()
+                            .foregroundColor(.white)
+
+                        Text(answer.text)
+                            .foregroundColor(.white)
+
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .millionaireStyle(
+                    styleForAnswerState(state),
+                    isEnabled: true
                 )
             }
         }
@@ -139,11 +157,24 @@ struct GameScreen: View {
             )
         }
     }
+    
+    private func styleForAnswerState(_ state: AnswerState) -> MillionaireButtonStyle.Variant {
+        switch state {
+        case .normal:
+            return .answerRegular
+        case .selected:
+            return .primary
+        case .correct:
+            return .answerCorrect
+        case .incorrect:
+            return .answerWrong
+        }
+    }
 }
 
 // MARK: - Preview
 #Preview {
     NavigationStack {
-        GameScreen()
+        GameScreen(gameType: GameType.continued)
     }
 }
