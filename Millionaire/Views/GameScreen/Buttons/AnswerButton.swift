@@ -8,22 +8,14 @@
 import SwiftUI
 
 // MARK: - Answer Letters (A, B, C, D)
-enum AnswerLetter: CaseIterable {
-    case a, b, c, d
-    
-    var letter: String {
-        switch self {
-        case .a: return "A"
-        case .b: return "B"
-        case .c: return "C"
-        case .d: return "D"
-        }
-    }
+enum AnswerLetter: String, CaseIterable {
+    case a = "A", b = "B", c = "C", d = "D"
 }
 
 // MARK: - Answer State (normal, correct, incorrect)
 enum AnswerState {
     case normal
+    case selected
     case correct
     case incorrect
     
@@ -31,6 +23,8 @@ enum AnswerState {
         switch self {
         case .normal:
             return .answerGradient3
+        case .selected:
+            return .buttonGradientColorDark
         case .correct:
             return .current1
         case .incorrect:
@@ -46,11 +40,13 @@ struct AnswerButton: View {
     let answerState: AnswerState
     var action: () -> Void
     
+    @State private var isUsed = false
+    
     // MARK: - Body
     var body: some View {
-        Button(action: action) {
+        Button(action: buttonAction) {
             HStack {
-                Text("\(letter.letter):")
+                Text("\(letter):")
                     .font(.headline)
                     .bold()
                     .foregroundStyle(.buttonGradientColorDark)
@@ -67,8 +63,17 @@ struct AnswerButton: View {
                 MillionaireShapeView(fillColor: answerState.color)
             )
         }
+        .disabled(isUsed)
         .buttonStyle(.plain)
     }
+    
+    // MARK: - Helper Methods
+    private func buttonAction() {
+        guard !isUsed else { return }
+        isUsed = true
+        action()
+    }
+    
 }
 
 // MARK: - Preview

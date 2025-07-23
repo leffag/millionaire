@@ -9,7 +9,8 @@ import SwiftUI
 
 struct GameScreen: View {
     @StateObject var viewModel: GameViewModel
-
+    @State private var showAlreadyAnsweredAlert = false
+    
     //    MARK: Init
     init() {
         self._viewModel = StateObject(wrappedValue: GameViewModel())
@@ -19,7 +20,8 @@ struct GameScreen: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.answerGradient3.ignoresSafeArea()
+                AnimatedGradientBackgroundView()
+                
                 VStack {
                     timerView()
                         .padding(.top, 20)
@@ -36,6 +38,13 @@ struct GameScreen: View {
                 .padding(20)
             }
         }
+        .alert(
+            "You have already selected an answer",
+               isPresented: $showAlreadyAnsweredAlert)
+        {
+            Button("OK", role: .cancel) {}
+        }
+        
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
@@ -49,7 +58,6 @@ struct GameScreen: View {
             }
         }
     }
-    
     
     // MARK: - NavTitle
     private func navTitle() -> some View {
@@ -92,33 +100,22 @@ struct GameScreen: View {
     // MARK: - Answer Buttons
     private func answerButtons() -> some View {
         VStack(spacing: 20) {
-            AnswerButton(
-                letter: AnswerLetter.a,
-                text: "",
-                answerState: AnswerState.normal,
-                action: {}
-            )
-            
-            AnswerButton(
-                letter: AnswerLetter.b,
-                text: "",
-                answerState: AnswerState.normal,
-                action: {}
-            )
-            
-            AnswerButton(
-                letter: AnswerLetter.c,
-                text: "",
-                answerState: AnswerState.normal,
-                action: {}
-            )
-            
-            AnswerButton(
-                letter: AnswerLetter.d,
-                text: "",
-                answerState: AnswerState.normal,
-                action: {}
-            )
+            ForEach(viewModel.answers) { answer in
+                AnswerButton(
+                    letter: AnswerLetter.allCases[viewModel.answers.firstIndex(where: { $0.id == answer.id }) ?? 0],
+                    text: answer.text,
+                    answerState: viewModel.answerStates[answer.id] ?? .normal,
+                    action: {
+                        if viewModel.selectedAnswer == nil {
+                            viewModel.selectAnswer(answer)
+                        } else {
+                            let generator = UINotificationFeedbackGenerator()
+                            generator.notificationOccurred(.error)
+                            showAlreadyAnsweredAlert = true
+                        }
+                    }
+                )
+            }
         }
     }
     
