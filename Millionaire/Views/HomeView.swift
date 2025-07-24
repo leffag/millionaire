@@ -37,41 +37,19 @@ enum GameType {
     }
 }
 
-enum NavigationRoute: Hashable {
-    case loading
-    case game(GameSession)
-}
-
 // MARK: - Используем напрямую MillionaireButtonStyle.Variant
 typealias ButtonVariant = MillionaireButtonStyle.Variant
 
 struct HomeView: View {
-    private let gameManager: GameManager
-    
+    @StateObject private var viewModel: HomeViewModel
     @State private var showRules = false
     
-    // Режим отображения экрана
-    @State private var viewMode: HomeViewMode = .firstStart
-    
-    // Данные для отображения
-    @State private var bestScore: Int = 15000
-    
-    @State private var navigationPath: [NavigationRoute] = []
-    
-    init(gameManager: GameManager) {
-        self.gameManager = gameManager
-        
-        let viewMode = HomeViewMode(
-            hasActiveSession: gameManager.lastSession?.isFinished == false,
-            hasScore: gameManager.bestScore > 0
-        )
-        
-        self._viewMode = State(initialValue: viewMode)
-        self._bestScore = State(initialValue: gameManager.bestScore)
+    init(gameManager: GameManager = GameManager()) {
+        self._viewModel = StateObject(wrappedValue: HomeViewModel(gameManager: gameManager))
     }
     
     var body: some View {
-        NavigationStack(path: $navigationPath) {
+        NavigationStack(path: $viewModel.navigationPath) {
             ZStack {
                 backgroundImage
                 
@@ -85,57 +63,34 @@ struct HomeView: View {
                     Spacer()
                     
                     // Лого и название игры из ресурсов
-                    logoSection
+                    logoAndScoreSection
                     
                     Spacer()
                     
                     // Кнопка New Game внизу
                     actionButtons
                 }
-                .background(Color.black)
-                .foregroundColor(.white)
             }
             .navigationBarHidden(true)
             .sheet(isPresented: $showRules) {
                 RulesView()
             }
-            .navigationDestination(for: NavigationRoute.self) { route in
-                switch route {
-                case .game(let session):
-                    GameScreen(
-                        viewModel: GameViewModel(
-                            initialSession: session,
-                            onSessionUpdated: {
-                                // При изменении игры на игровом экране актуализируем
-                                // состояние в менеджере
-                                //
-                                // Это не приведёт к обновлению стейта viewMode, но нам это пока не нужно,
-                                // чтобы не перестроилась вся иерархия стека навигации
-                                gameManager.lastSession = $0
-                            }
-                        )
-                    )
-                    
-                case .loading:
-                    ZStack {
-                        backgroundImage
-                        
-                        ProgressView()
-                            .tint(.white)
-                    }
-                }
+            .alert("Ошибка", isPresented: $viewModel.showError) {
+                Button("OK") { }
+            } message: {
+                Text(viewModel.errorMessage)
+            }
+            .navigationDestination(for: HomeViewModel.NavigationRoute.self) { route in
+                destinationView(for: route)
             }
         }
-        .onChange(of: navigationPath) { newValue in
-            if newValue == [] {
-                // Вернулись на главный экран, обновим данные для отображения из менеджера
-                // Важно делать это по возвращению, а не прямо во время игры, иначе получаем баги на игровом экране
-                viewMode = gameManager.lastSession?.isFinished == false ? .notCompletedGame : .firstStart
-                bestScore = gameManager.bestScore
-            }
+        .onAppear {
+            viewModel.onAppear()
+        }
+        .onChange(of: viewModel.navigationPath) { newPath in
+            viewModel.onNavigationChange(newPath)
         }
     }
-    
     
     // MARK: - View Components
     
@@ -165,32 +120,41 @@ struct HomeView: View {
     }
     
     @ViewBuilder
-    private var logoSection: some View {
-        Image("HomeScreenLogo")
-            .frame(width: 311, height: 287)
+    private var logoAndScoreSection: some View {
+        VStack() {
+            Image("HomeScreenLogo")
+                .frame(width: 311, height: 287)
+            // Лучший счет
+            if viewModel.viewMode != .firstStart {
+                bestScoreView
+                    .padding(.top, 60)
+            }
+        }
     }
     
     @ViewBuilder
     private var actionButtons: some View {
         VStack(spacing: 20) {
-            if viewMode != .firstStart {
-                bestScoreLabel
-            }
-            
-            if viewMode != .notCompletedGame {
+            // Кнопки игры
+            switch viewModel.viewMode {
+            case .firstStart, .secondStart:
                 gameButton(
                     for: .new,
-                    variant: .primary
+                    variant: .primary,
+                    action: viewModel.startNewGame
                 )
-            }
-            if viewMode == .notCompletedGame {
+                
+            case .notCompletedGame:
                 gameButton(
                     for: .continued,
-                    variant: .primary
+                    variant: .primary,
+                    action: viewModel.continueGame
                 )
+                
                 gameButton(
                     for: .new,
-                    variant: .regular
+                    variant: .regular,
+                    action: viewModel.startNewGame
                 )
             }
             
@@ -199,29 +163,28 @@ struct HomeView: View {
         }
         .padding(.horizontal, 40)
     }
-  
+    
     @ViewBuilder
-    private func gameButton(for type: GameType, variant: ButtonVariant) -> some View {
-        Button(action: {
-            Task {
-                await startGame(type: type)
-            }
-        }) {
+    private func gameButton(for type: GameType,
+                            variant: ButtonVariant,
+                            action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             Text(type.buttonTitle)
         }
         .millionaireStyle(variant)
         .frame(maxWidth: .infinity)
+        .disabled(viewModel.isLoading)
     }
     
     @ViewBuilder
-    private var bestScoreLabel: some View {
+    private var bestScoreView: some View {
         VStack {
             Text("All-time Best Score:")
                 .font(.body)
                 .foregroundColor(.white.opacity(0.7))
             HStack {
                 Image("Coin")
-                Text("\(bestScore.formatted()) ₽")
+                Text(viewModel.bestScore, format: .currency(code: Locale.current.currency?.identifier ?? "₽"))
                     .font(.body)
                     .fontWeight(.semibold)
                     .foregroundColor(.white)
@@ -229,38 +192,40 @@ struct HomeView: View {
         }
     }
     
-    private func startGame(type: GameType) async {
-        switch type {
-        case .new:
-            do {
-                // Покажем экран загрузки на время загрузки данных
-                navigationPath = [.loading]
-                
-                // Пытаемся получить игровую сессию
-                let initialSession = try await gameManager.startNewGame()
-                
-                // Показываем игровой экран с этой сессией
-                navigationPath = [.game(initialSession)]
-            }
-            catch {
-                // Что-то пошло не так, возвращаемся в корень навигации
-                navigationPath = []
-            }
+    @ViewBuilder
+    private func destinationView(for route: HomeViewModel.NavigationRoute) -> some View {
+        switch route {
+        case .loading:
+            LoadingView()
             
-        case .continued:
-            // Для продолжения игры обязательно должна быть ранее запущенная активная сессия
-            guard
-                let session = gameManager.lastSession,
-                !session.isFinished
-            else {
-                return
-            }
-            
-            // Показываем игровой экран с этой сессией
-            navigationPath = [.game(session)]
+        case .game(let session):
+            GameScreen(
+                viewModel: viewModel.createGameViewModel(for: session)
+            )
         }
     }
     
+}
+
+struct LoadingView: View {
+    var body: some View {
+        ZStack {
+            Image("Background")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 20) {
+                ProgressView()
+                    .scaleEffect(1.5)
+                    .tint(.white)
+                
+                Text("Загрузка вопросов...")
+                    .font(.headline)
+                    .foregroundColor(.white)
+            }
+        }
+    }
 }
 
 // MARK: - Preview
