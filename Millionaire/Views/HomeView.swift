@@ -173,7 +173,7 @@ struct HomeView: View {
         }) {
             Text(type.buttonTitle)
         }
-        .millionaireStyle(variant, isEnabled: true)
+        .millionaireStyle(variant)
         .frame(maxWidth: .infinity)
     }
     
