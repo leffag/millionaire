@@ -32,9 +32,8 @@ enum ScoreLogic {
     static let checkpointIndices: [Int] = [4, 9, 14]
     
     /// Метод найтиБлижайшийИндексЧекпоинта
-    // Возвращает несгораемую сумму, либо 0, если до вопросов с несгораемой суммой не дошли.
-    // TODO: подумать над названием метода, т.к. мы возвращаем не индекс чекпоинта, а выигрыш этого чекпоинта, который высчитывается по этому индексу.
-    static func findClosestCheckpointScoreIndex(questionIndex: Int) -> Int {
+    /// Возвращает несгораемую сумму, либо 0, если до вопросов с несгораемой суммой не дошли.
+    static func findClosestCheckpointScore(questionIndex: Int) -> Int {
         // Проверяем, были ли вопросы с несгораемой суммой до вопроса с индексом.
         let checkpointIndex = checkpointIndices.last { $0 < questionIndex }
         

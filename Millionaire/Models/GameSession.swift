@@ -102,7 +102,7 @@ struct GameSession: Hashable {
         } else {
             // Если ответ неверный, в счет записываем несгораемую сумму.
             // Заканчиваем игру и возращаем результат о том, что был дан неверный ответ
-            score = ScoreLogic.findClosestCheckpointScoreIndex(questionIndex: currentQuestionIndex)
+            score = ScoreLogic.findClosestCheckpointScore(questionIndex: currentQuestionIndex)
             isFinished = true
             return .incorrect
         }
