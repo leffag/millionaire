@@ -14,8 +14,9 @@ struct Prize: Equatable {
     
     var formatted: String {
         let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.groupingSeparator = ","
-        return "\(formatter.string(from: NSNumber(value: amount))!) ₽"
+        formatter.numberStyle = .currency
+        formatter.locale = Locale.current  // Автоматически подтянет рубль/евро/доллар и формат
+
+        return formatter.string(from: NSNumber(value: amount)) ?? "\(amount)"
     }
 }

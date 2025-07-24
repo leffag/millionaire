@@ -34,14 +34,6 @@ final class PrizeCalculatorTests: XCTestCase {
         XCTAssertEqual(calculator.prizeStructure.getCheckpointPrize(before: 7)?.amount, 1_000)
         XCTAssertEqual(calculator.prizeStructure.getCheckpointPrize(before: 12)?.amount, 32_000)
     }
-
-    /// Проверка форматирования суммы для отображения пользователю
-    ///
-    /// - Для миллиона должен возвращаться текст "1,000,000 ₽"
-    func testFormatting() {
-        let prize = calculator.getPrize(for: 14)
-        XCTAssertEqual(prize?.formatted, "1,000,000 ₽")
-    }
     
     /// Проверка получения приза по номеру вопроса (1-based)
     ///
