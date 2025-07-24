@@ -11,6 +11,16 @@ enum HomeViewMode {
     case firstStart
     case secondStart
     case notCompletedGame
+    
+    /// Вспомогательный инит для создания на основе флагов наличия сессии и наличия лучшего результата
+    init(hasActiveSession: Bool, hasScore: Bool) {
+        if hasActiveSession {
+            self = .notCompletedGame
+        }
+        else {
+            self = hasScore ? .secondStart : .firstStart
+        }
+    }
 }
 
 enum GameType {
@@ -27,13 +37,18 @@ enum GameType {
     }
 }
 
+enum NavigationRoute: Hashable {
+    case loading
+    case game(GameSession)
+}
+
 // MARK: - Используем напрямую MillionaireButtonStyle.Variant
 typealias ButtonVariant = MillionaireButtonStyle.Variant
 
 struct HomeView: View {
-    @State private var showGame = false
+    private let gameManager: GameManager
+    
     @State private var showRules = false
-    @State private var gameType: GameType = .new
     
     // Режим отображения экрана
     @State private var viewMode: HomeViewMode = .firstStart
@@ -41,63 +56,83 @@ struct HomeView: View {
     // Данные для отображения
     @State private var bestScore: Int = 15000
     
-    init(viewMode: HomeViewMode = .firstStart, bestScore: Int = 0) {
+    @State private var navigationPath: [NavigationRoute] = []
+    
+    init(gameManager: GameManager) {
+        self.gameManager = gameManager
+        
+        let viewMode = HomeViewMode(
+            hasActiveSession: gameManager.lastSession?.isFinished == false,
+            hasScore: gameManager.bestScore > 0
+        )
+        
         self._viewMode = State(initialValue: viewMode)
-        self._bestScore = State(initialValue: bestScore)
+        self._bestScore = State(initialValue: gameManager.bestScore)
     }
     
     var body: some View {
-        ZStack {
-            backgroundImage
-            
-            // Кнопка Rules
-            VStack {
-                helpButton
-                Spacer()
-            }
-            
-            VStack {
-                Spacer()
+        NavigationStack(path: $navigationPath) {
+            ZStack {
+                backgroundImage
                 
-                // Лого и название игры из ресурсов
-                logoSection
-                
-                Spacer()
-                
-                // Кнопка New Game внизу
-                actionButtons
-            }
-        }
-        .navigationBarHidden(true)
-        .fullScreenCover(isPresented: $showGame) {
-            // FIXME: GameView not implemented yet
-            // Покажет экран игры с новой/продолженной логикой игры
-            // GameView(gameType: gameType)
-            
-            // TODO: Implement GameView with gameType parameter
-            VStack {
-                HStack {
+                // Кнопка Rules
+                VStack {
+                    helpButton
                     Spacer()
-                    Button("Close") {
-                        showGame = false
-                    }
-                    .padding()
                 }
                 
-                Spacer()
-                
-                Text("Game Screen - \(gameType == .new ? "New Game" : "Continue")")
-                    .font(.title)
-                
-                Spacer()
+                VStack {
+                    Spacer()
+                    
+                    // Лого и название игры из ресурсов
+                    logoSection
+                    
+                    Spacer()
+                    
+                    // Кнопка New Game внизу
+                    actionButtons
+                }
+                .background(Color.black)
+                .foregroundColor(.white)
             }
-            .background(Color.black)
-            .foregroundColor(.white)
-            // TODO: Implement GameView with gameType parameter
-            
+            .navigationBarHidden(true)
+            .sheet(isPresented: $showRules) {
+                RulesView()
+            }
+            .navigationDestination(for: NavigationRoute.self) { route in
+                switch route {
+                case .game(let session):
+                    GameScreen(
+                        viewModel: GameViewModel(
+                            initialSession: session,
+                            onSessionUpdated: {
+                                // При изменении игры на игровом экране актуализируем
+                                // состояние в менеджере
+                                //
+                                // Это не приведёт к обновлению стейта viewMode, но нам это пока не нужно,
+                                // чтобы не перестроилась вся иерархия стека навигации
+                                gameManager.lastSession = $0
+                            }
+                        )
+                    )
+                    
+                case .loading:
+                    ZStack {
+                        backgroundImage
+                        
+                        ProgressView()
+                            .tint(.white)
+                    }
+                }
+            }
         }
-        .sheet(isPresented: $showRules) {
-            RulesView()
+        .onChange(of: navigationPath) { newValue in
+            if newValue == [] {
+                // Вернулись на главный экран, обновим данные для отображения из менеджера
+                // Важно делать это по возвращению, а не прямо во время игры, иначе получаем баги на игровом экране
+                viewMode = gameManager.lastSession?.isFinished == false ? .notCompletedGame : .firstStart
+                bestScore = gameManager.bestScore
+            }
         }
     }
     
@@ -168,8 +203,9 @@ struct HomeView: View {
     @ViewBuilder
     private func gameButton(for type: GameType, variant: ButtonVariant) -> some View {
         Button(action: {
-            self.gameType = type
-            showGame = true
+            Task {
+                await startGame(type: type)
+            }
         }) {
             Text(type.buttonTitle)
         }
@@ -193,17 +229,70 @@ struct HomeView: View {
         }
     }
     
+    private func startGame(type: GameType) async {
+        switch type {
+        case .new:
+            do {
+                // Покажем экран загрузки на время загрузки данных
+                navigationPath = [.loading]
+                
+                // Пытаемся получить игровую сессию
+                let initialSession = try await gameManager.startNewGame()
+                
+                // Показываем игровой экран с этой сессией
+                navigationPath = [.game(initialSession)]
+            }
+            catch {
+                // Что-то пошло не так, возвращаемся в корень навигации
+                navigationPath = []
+            }
+            
+        case .continued:
+            // Для продолжения игры обязательно должна быть ранее запущенная активная сессия
+            guard
+                let session = gameManager.lastSession,
+                !session.isFinished
+            else {
+                return
+            }
+            
+            // Показываем игровой экран с этой сессией
+            navigationPath = [.game(session)]
+        }
+    }
+    
 }
 
 // MARK: - Preview
 #Preview("First Start") {
-    HomeView(viewMode: .firstStart)
+    HomeView(
+        gameManager: GameManager()
+    )
 }
 
 #Preview("Second Start with Best Score") {
-    HomeView(viewMode: .secondStart, bestScore: 125000)
+    HomeView(
+        gameManager: GameManager(bestScore: 125000)
+    )
 }
 
 #Preview("Not Completed Game") {
-    HomeView(viewMode: .notCompletedGame, bestScore: 32000)
+    HomeView(
+        gameManager: GameManager(
+            bestScore: 32000,
+            lastSession: .preview()
+        )
+    )
+}
+
+private extension GameSession {
+    /// Создает тестовую сессию для использования в превью
+    static func preview() -> Self {
+        GameSession(
+            questions: Array(
+                repeating: Question(difficulty: .easy, category: "aaa", question: "Как дела?", correctAnswer: "Хорошо", incorrectAnswers: Array(repeating: "Плохо", count: 3)),
+                count: 15
+            )
+        )!
+    }
 }

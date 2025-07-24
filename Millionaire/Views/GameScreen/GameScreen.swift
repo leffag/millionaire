@@ -8,33 +8,32 @@
 import SwiftUI
 
 struct GameScreen: View {
-    @StateObject var viewModel: GameViewModel
+    @ObservedObject var viewModel: GameViewModel
 
     //    MARK: Init
-    init() {
-        self._viewModel = StateObject(wrappedValue: GameViewModel())
+    init(viewModel: GameViewModel) {
+        self.viewModel = viewModel
     }
     
     // MARK: - Body
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.answerGradient3.ignoresSafeArea()
-                VStack {
-                    timerView()
-                        .padding(.top, 20)
-                    
-                    questionTextView()
-                        .padding(.top, 20)
-                        .padding(.bottom, 20)
-                    
-                    
-                    answerButtons()
-                        .padding(.vertical, 20)
-                    helpButtons()
-                }
-                .padding(20)
+        ZStack {
+            Color.answerGradient3.ignoresSafeArea()
+            
+            VStack {
+                timerView()
+                    .padding(.top, 20)
+                
+                questionTextView()
+                    .padding(.top, 20)
+                    .padding(.bottom, 20)
+                
+                
+                answerButtons()
+                    .padding(.vertical, 20)
+                helpButtons()
             }
+            .padding(20)
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -81,7 +80,7 @@ struct GameScreen: View {
     // MARK: - Question View
     private func questionTextView() -> some View {
         VStack {
-            Text(viewModel.question?.question ?? "Как дела?")
+            Text(viewModel.question.question)
                 .font(.headline)
                 .foregroundStyle(.white)
                 .bold()
@@ -92,33 +91,15 @@ struct GameScreen: View {
     // MARK: - Answer Buttons
     private func answerButtons() -> some View {
         VStack(spacing: 20) {
-            AnswerButton(
-                letter: AnswerLetter.a,
-                text: "",
-                answerState: AnswerState.normal,
-                action: {}
-            )
-            
-            AnswerButton(
-                letter: AnswerLetter.b,
-                text: "",
-                answerState: AnswerState.normal,
-                action: {}
-            )
-            
-            AnswerButton(
-                letter: AnswerLetter.c,
-                text: "",
-                answerState: AnswerState.normal,
-                action: {}
-            )
-            
-            AnswerButton(
-                letter: AnswerLetter.d,
-                text: "",
-                answerState: AnswerState.normal,
-                action: {}
-            )
+            ForEach(Array(zip(AnswerLetter.allCases, viewModel.answers)), id: \.0) { letter, answer in
+                AnswerButton(
+                    letter: letter,
+                    text: answer,
+                    answerState: AnswerState.normal,
+                    action: { viewModel.onAnswer(letter: letter) }
+                )
+                .disabled(viewModel.disabledAnswers.contains(answer))
+            }
         }
     }
     
@@ -129,16 +110,19 @@ struct GameScreen: View {
                 type: .fiftyFifty,
                 action: viewModel.fiftyFiftyButtonTap
             )
+            .disabled(!viewModel.lifelines.contains(.fiftyFifty))
             
             HelpButton(
                 type: .audience,
                 action: viewModel.audienceButtonTap
             )
+            .disabled(!viewModel.lifelines.contains(.audience))
             
             HelpButton(
                 type: .callToFriend,
                 action: viewModel.callYourFriendButtonTap
             )
+            .disabled(!viewModel.lifelines.contains(.callToFriend))
         }
     }
 }
@@ -146,6 +130,15 @@ struct GameScreen: View {
 // MARK: - Preview
 #Preview {
     NavigationStack {
-        GameScreen()
+        GameScreen(
+            viewModel: GameViewModel(
+                initialSession: GameSession(
+                    questions: Array(
+                        repeating: Question(difficulty: .easy, category: "aaa", question: "Как дела?", correctAnswer: "Хорошо", incorrectAnswers: Array(repeating: "Плохо", count: 3)),
+                        count: 15
+                    )
+                )!
+            )
+        )
     }
 }

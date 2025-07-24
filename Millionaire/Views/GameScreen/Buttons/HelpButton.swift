@@ -8,11 +8,7 @@
 import SwiftUI
 
 // MARK: - Lifeline Types
-enum TypeButton {
-    case fiftyFifty
-    case audience
-    case callToFriend
-    
+extension Lifeline {
     var imageName: Image {
         switch self {
         case .fiftyFifty:
@@ -27,27 +23,19 @@ enum TypeButton {
 
 // MARK: - Help Button View
 struct HelpButton: View {
-    let type: TypeButton
+    let type: Lifeline
     let action: () -> Void
-
-    @State private var isUsed = false
+    
+    @Environment(\.isEnabled) var isEnabled
     
     // MARK: - Body
     var body: some View {
-        Button(action: buttonAction) {
+        Button(action: action) {
             type.imageName
                 .resizable()
                 .scaledToFit()
-                .opacity(isUsed ? 0.3 : 1.0)
+                .opacity(!isEnabled ? 0.3 : 1.0)
         }
-        .disabled(isUsed)
-    }
-    
-    // MARK: - Helper Methods
-    private func buttonAction() {
-        guard !isUsed else { return }
-        isUsed = true
-        action()
     }
 }
 

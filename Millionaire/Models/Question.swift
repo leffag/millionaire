@@ -20,7 +20,7 @@ struct QuestionsResponse: Decodable {
     let results: [Question]
 }
 
-struct Question: Decodable {
+struct Question: Decodable, Hashable {
     let difficulty: QuestionDifficulty
     let category: String
     let question: String
