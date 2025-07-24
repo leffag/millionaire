@@ -30,7 +30,7 @@ struct CallToFriendLifelineResult {
     let answer: String
 }
 
-/// Состояние игры с полной логикой его обновления
+/// Модель игры с полной логикой обновления её состояния
 struct GameSession: Hashable {
     /// Массив вопросов
     let questions: [Question]

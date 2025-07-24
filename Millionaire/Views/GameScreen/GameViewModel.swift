@@ -8,7 +8,15 @@
 import Foundation
 
 final class GameViewModel: ObservableObject {
-    @Published private var session: GameSession
+    /// Обработчик изменения состояния игры
+    private let onSessionUpdated: (GameSession) -> Void
+    
+    @Published private var session: GameSession {
+        didSet {
+            // Сообщаем обработчику об изменении состояния игры
+            onSessionUpdated(session)
+        }
+    }
     
     /// Массив вариантов ответа в порядке их отображения
     @Published private(set) var answers: [String] {
@@ -36,8 +44,12 @@ final class GameViewModel: ObservableObject {
     var lifelines: Set<Lifeline> { session.lifelines }
     
 //    MARK: Init
-    init(initialSession: GameSession) {
+    init(
+        initialSession: GameSession,
+        onSessionUpdated: @escaping (GameSession) -> Void = { _ in }
+    ) {
         self.session = initialSession
+        self.onSessionUpdated = onSessionUpdated
         
         answers = initialSession.currentQuestion.allAnswers.shuffled()
     }

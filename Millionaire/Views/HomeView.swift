@@ -11,6 +11,16 @@ enum HomeViewMode {
     case firstStart
     case secondStart
     case notCompletedGame
+    
+    /// Вспомогательный инит для создания на основе флагов наличия сессии и наличия лучшего результата
+    init(hasActiveSession: Bool, hasScore: Bool) {
+        if hasActiveSession {
+            self = .notCompletedGame
+        }
+        else {
+            self = hasScore ? .secondStart : .firstStart
+        }
+    }
 }
 
 enum GameType {
@@ -36,6 +46,8 @@ enum NavigationRoute: Hashable {
 typealias ButtonVariant = MillionaireButtonStyle.Variant
 
 struct HomeView: View {
+    private let gameManager: GameManager
+    
     @State private var showRules = false
     
     // Режим отображения экрана
@@ -46,9 +58,16 @@ struct HomeView: View {
     
     @State private var navigationPath: [NavigationRoute] = []
     
-    init(viewMode: HomeViewMode = .firstStart, bestScore: Int = 0) {
+    init(gameManager: GameManager) {
+        self.gameManager = gameManager
+        
+        let viewMode = HomeViewMode(
+            hasActiveSession: gameManager.lastSession?.isFinished == false,
+            hasScore: gameManager.bestScore > 0
+        )
+        
         self._viewMode = State(initialValue: viewMode)
-        self._bestScore = State(initialValue: bestScore)
+        self._bestScore = State(initialValue: gameManager.bestScore)
     }
     
     var body: some View {
@@ -84,7 +103,17 @@ struct HomeView: View {
                 switch route {
                 case .game(let session):
                     GameScreen(
-                        viewModel: GameViewModel(initialSession: session)
+                        viewModel: GameViewModel(
+                            initialSession: session,
+                            onSessionUpdated: {
+                                // При изменении игры на игровом экране актуализируем
+                                // состояние в менеджере
+                                //
+                                // Это не приведёт к обновлению стейта viewMode, но нам это пока не нужно,
+                                // чтобы не перестроилась вся иерархия стека навигации
+                                gameManager.lastSession = $0
+                            }
+                        )
                     )
                     
                 case .loading:
@@ -95,6 +124,14 @@ struct HomeView: View {
                             .tint(.white)
                     }
                 }
+            }
+        }
+        .onChange(of: navigationPath) { newValue in
+            if newValue == [] {
+                // Вернулись на главный экран, обновим данные для отображения из менеджера
+                // Важно делать это по возвращению, а не прямо во время игры, иначе получаем баги на игровом экране
+                viewMode = gameManager.lastSession?.isFinished == false ? .notCompletedGame : .firstStart
+                bestScore = gameManager.bestScore
             }
         }
     }
@@ -193,30 +230,34 @@ struct HomeView: View {
     }
     
     private func startGame(type: GameType) async {
-        navigationPath = [.loading]
-        
         switch type {
         case .new:
             do {
-                let questions = try await NetworkService.shared.fetchQuestions(from: QuestionsAPI.baseURL)
+                // Покажем экран загрузки на время загрузки данных
+                navigationPath = [.loading]
                 
-                guard let initialSession = GameSession(questions: questions) else {
-                    throw StartGameFailure.invalidQuestions
-                }
+                // Пытаемся получить игровую сессию
+                let initialSession = try await gameManager.startNewGame()
                 
+                // Показываем игровой экран с этой сессией
                 navigationPath = [.game(initialSession)]
             }
             catch {
+                // Что-то пошло не так, возвращаемся в корень навигации
                 navigationPath = []
             }
             
         case .continued:
-            // FIXME: Реализовать продолжение игры
-            navigationPath = []
-        }
-        
-        enum StartGameFailure: Error {
-            case invalidQuestions
+            // Для продолжения игры обязательно должна быть ранее запущенная активная сессия
+            guard
+                let session = gameManager.lastSession,
+                !session.isFinished
+            else {
+                return
+            }
+            
+            // Показываем игровой экран с этой сессией
+            navigationPath = [.game(session)]
         }
     }
     
@@ -224,13 +265,34 @@ struct HomeView: View {
 
 // MARK: - Preview
 #Preview("First Start") {
-    HomeView(viewMode: .firstStart)
+    HomeView(
+        gameManager: GameManager()
+    )
 }
 
 #Preview("Second Start with Best Score") {
-    HomeView(viewMode: .secondStart, bestScore: 125000)
+    HomeView(
+        gameManager: GameManager(bestScore: 125000)
+    )
 }
 
 #Preview("Not Completed Game") {
-    HomeView(viewMode: .notCompletedGame, bestScore: 32000)
+    HomeView(
+        gameManager: GameManager(
+            bestScore: 32000,
+            lastSession: .preview()
+        )
+    )
+}
+
+private extension GameSession {
+    /// Создает тестовую сессию для использования в превью
+    static func preview() -> Self {
+        GameSession(
+            questions: Array(
+                repeating: Question(difficulty: .easy, category: "aaa", question: "Как дела?", correctAnswer: "Хорошо", incorrectAnswers: Array(repeating: "Плохо", count: 3)),
+                count: 15
+            )
+        )!
+    }
 }
