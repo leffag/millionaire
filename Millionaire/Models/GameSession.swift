@@ -30,7 +30,7 @@ struct CallToFriendLifelineResult {
     let answer: String
 }
 
-/// Состояние игры
+/// Состояние игры с полной логикой его обновления
 struct GameSession: Hashable {
     /// Массив вопросов
     let questions: [Question]
@@ -75,7 +75,7 @@ struct GameSession: Hashable {
         self.lifelines = lifelines
     }
     
-    /// Функция, возвращающая результат, был ответ верный или нет
+    /// Функция, возвращающая результат, был ответ верный или нет, и переходящая к следующему вопросу, если таковой есть
     mutating func answer(answer: String) -> AnswerResult? {
         // Проверяем, что игра не закончена
         guard !isFinished else {
