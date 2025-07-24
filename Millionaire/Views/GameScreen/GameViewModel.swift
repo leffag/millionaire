@@ -19,7 +19,7 @@ final class GameViewModel: ObservableObject {
     }
     
     /// Недоступные для выбора варианты ответов
-    @Published private(set) var disabledAnswers: Set<Int> = []
+    @Published private(set) var disabledAnswers: Set<String> = []
     
     let duration: String = "00:00"
     
@@ -42,10 +42,12 @@ final class GameViewModel: ObservableObject {
         answers = initialSession.currentQuestion.allAnswers.shuffled()
     }
     
-    func onAnswer(index: Int) {
+    func onAnswer(letter: AnswerLetter) {
+        let answerIndex = letter.answerIndex
+        
         var newSession = session
         
-        guard let answerResult = newSession.answer(answer: answers[index]) else {
+        guard let answerResult = newSession.answer(answer: answers[answerIndex]) else {
             return
         }
         
@@ -67,55 +69,29 @@ final class GameViewModel: ObservableObject {
     
     // MARK: - Help Button Actions
     func fiftyFiftyButtonTap() {
-        guard !session.isFinished else {
+        guard let result = session.useFiftyFiftyLifeline() else {
+            // Подсказка недоступна, не делаем ничего
             return
         }
         
-        guard session.lifelines.contains(.fiftyFifty) else {
-            return
-        }
-        
-        session.useLifeline(lifeline: .fiftyFifty)
-        
-        guard
-            let correctAnswerIndex = answers.firstIndex(of: question.correctAnswer)
-        else {
-            return
-        }
-        
-        let incorrectIndices = answers
-            .indices
-            .filter { $0 != correctAnswerIndex }
-            .shuffled()
-        
-        disabledAnswers.insert(incorrectIndices[0])
-        disabledAnswers.insert(incorrectIndices[1])
+        // Помечаем полученные от подсказки ответы как недоступные к выбору
+        disabledAnswers = result.disabledAnswers
     }
     
     func audienceButtonTap() {
-        guard !session.isFinished else {
+        guard let result = session.useAudienceLifeline() else {
+            // Подсказка недоступна, не делаем ничего
             return
         }
-        
-        guard session.lifelines.contains(.audience) else {
-            return
-        }
-        
-        session.useLifeline(lifeline: .audience)
         
         // TODO: Реализация подсказки
     }
     
     func callYourFriendButtonTap() {
-        guard !session.isFinished else {
+        guard let result = session.useCallToFriendLifeline() else {
+            // Подсказка недоступна, не делаем ничего
             return
         }
-        
-        guard session.lifelines.contains(.callToFriend) else {
-            return
-        }
-        
-        session.useLifeline(lifeline: .callToFriend)
         
         // TODO: Реализация подсказки
     }
@@ -124,5 +100,11 @@ final class GameViewModel: ObservableObject {
 private extension Question {
     var allAnswers: [String] {
         [correctAnswer] + incorrectAnswers
+    }
+}
+
+private extension AnswerLetter {
+    var answerIndex: Int {
+        Self.allCases.firstIndex(of: self)!
     }
 }

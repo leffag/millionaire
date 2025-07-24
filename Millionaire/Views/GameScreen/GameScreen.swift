@@ -91,37 +91,15 @@ struct GameScreen: View {
     // MARK: - Answer Buttons
     private func answerButtons() -> some View {
         VStack(spacing: 20) {
-            AnswerButton(
-                letter: AnswerLetter.a,
-                text: viewModel.answers[0],
-                answerState: AnswerState.normal,
-                action: { viewModel.onAnswer(index: 0) }
-            )
-            .disabled(viewModel.disabledAnswers.contains(0))
-            
-            AnswerButton(
-                letter: AnswerLetter.b,
-                text: viewModel.answers[1],
-                answerState: AnswerState.normal,
-                action: { viewModel.onAnswer(index: 1) }
-            )
-            .disabled(viewModel.disabledAnswers.contains(1))
-            
-            AnswerButton(
-                letter: AnswerLetter.c,
-                text: viewModel.answers[2],
-                answerState: AnswerState.normal,
-                action: { viewModel.onAnswer(index: 2) }
-            )
-            .disabled(viewModel.disabledAnswers.contains(2))
-            
-            AnswerButton(
-                letter: AnswerLetter.d,
-                text: viewModel.answers[3],
-                answerState: AnswerState.normal,
-                action: { viewModel.onAnswer(index: 3) }
-            )
-            .disabled(viewModel.disabledAnswers.contains(3))
+            ForEach(Array(zip(AnswerLetter.allCases, viewModel.answers)), id: \.0) { letter, answer in
+                AnswerButton(
+                    letter: letter,
+                    text: answer,
+                    answerState: AnswerState.normal,
+                    action: { viewModel.onAnswer(letter: letter) }
+                )
+                .disabled(viewModel.disabledAnswers.contains(answer))
+            }
         }
     }
     
