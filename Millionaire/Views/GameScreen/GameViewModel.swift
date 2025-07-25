@@ -52,11 +52,15 @@ final class GameViewModel: ObservableObject {
     @Published var duration: String = "00:00"
     
     // Доп состояния для UI
+    @Published var correctAnswer: String?
     @Published var selectedAnswer: String?
+    @Published var answerResultState: AnswerResult?
     
-    @Published private(set) var isProcessingAnswer = false
-    @Published private(set) var showResult = false
-    @Published private(set) var lastAnswerWasCorrect = false
+//    @Published private(set) var isProcessingAnswer = false
+//    @Published private(set) var showResult = false
+//    @Published private(set) var lastAnswerWasCorrect = false
+  
+    
     
     @Published var shouldShowGameOver = false
     @Published var shouldShowVictory = false
@@ -137,7 +141,7 @@ final class GameViewModel: ObservableObject {
     // MARK: - Answer Tap
     func onAnswer(_ answer: String) {
         // Предотвращаем множественные нажатия
-           guard !isProcessingAnswer else { return }
+//           guard !isProcessingAnswer else { return }
         
             // Отменяем предыдущую задачу, если она есть
             answerProcessingTask?.cancel() // Если пользователь быстро нажал другой ответ
@@ -154,7 +158,7 @@ final class GameViewModel: ObservableObject {
     
     @MainActor
     private func processAnswerWithDelay(answer: String) async {
-        isProcessingAnswer = true
+//        isProcessingAnswer = true
         
         //   Cтавим на паузу таймер
         timerService.pauseTimer()
@@ -174,7 +178,7 @@ final class GameViewModel: ObservableObject {
             
         } catch {
             // Задача была отменена
-            isProcessingAnswer = false
+//            isProcessingAnswer = false
             audioService.stop()
         }
     }
@@ -188,7 +192,7 @@ final class GameViewModel: ObservableObject {
         
         // Обрабатываем ответ — получаем результат, но не начисляем тут ничего
         guard let answerResult = newSession.answer(answer: answer) else {
-            isProcessingAnswer = false
+//            isProcessingAnswer = false
             return
         }
         
@@ -197,26 +201,23 @@ final class GameViewModel: ObservableObject {
         case .correct:
             let prize = prizeCalculator.getPrizeAmount(for: session.currentQuestionIndex)
             newSession.addScore(prize)
-            lastAnswerWasCorrect = true
         case .incorrect:
             let checkpoint = prizeCalculator.getCheckpointPrizeAmount(before: session.currentQuestionIndex)
             newSession.setScore(checkpoint)
-            lastAnswerWasCorrect = false
         }
 
         // Обновляем сессию
-        session = newSession
-        
-        // Переход в состояние показа результата
-        showResult = true
-        
-        lastAnswerWasCorrect = answerResult == .correct
+//        session = newSession
+//        showResult = true
+//        lastAnswerWasCorrect = answerResult == .correct
 
         // Звук
         switch answerResult {
         case .correct:
+            answerResultState = .correct
             audioService.playCorrectAnswerSfx()
         case .incorrect:
+            answerResultState = .incorrect
             audioService.playWrongAnswerSfx()
         }
 
@@ -225,29 +226,30 @@ final class GameViewModel: ObservableObject {
             try await Task.sleep(for: .seconds(2))
             try Task.checkCancellation()
 
-            showResult = false
-            isProcessingAnswer = false
+//            showResult = false
+//            isProcessingAnswer = false
 
-            if answerResult == .correct && !session.isFinished {
-                // Подготовка следующего вопроса
-                selectedAnswer = nil  // <-- переносим сюда
-                answers = session.currentQuestion.allAnswers.shuffled()
-                startGame()
-            } else {
-                // Игра окончена
-                checkGameEnd()
-            }
+//            if answerResult == .correct && !session.isFinished {
+//                // Подготовка следующего вопроса
+//                selectedAnswer = nil  // <-- переносим сюда
+//                answers = session.currentQuestion.allAnswers.shuffled()
+////                startGame()
+//            } else {
+//                // Игра окончена
+//                checkGameEnd()
+//            }
 
         } catch {
             // Отменено
-            showResult = false
-            isProcessingAnswer = false
+//            showResult = false
+//            isProcessingAnswer = false
         }
     }
     
     private func checkGameEnd() {
         if session.isFinished {
-            if session.currentQuestionIndex == 14 && lastAnswerWasCorrect {
+            if session.currentQuestionIndex == 14 {
+//                удалил && lastAnswerWasCorrect
                 print(" ПОБЕДА! Выигран миллион!")
                 navigationState = .victory(score: session.score)
                 //audioService.playVictorySfx()
