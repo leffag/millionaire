@@ -12,13 +12,8 @@ import Combine
 
 protocol ITimerService {
     var progressPublisher: Published<Float>.Publisher { get }
-
     func start30SecondTimer(completion: @escaping () -> Void)
-
-    func start5SecondTimer(completion: @escaping () -> Void)
-
-    func start2SecondTimer(completion: @escaping () -> Void)
-    
+    func pauseTimer()
     func stopTimer()
 }
 
@@ -39,12 +34,12 @@ final class TimerService: ITimerService {
         configureTimer(totalSeconds: 30, updateProgress: true, completion: completion)
     }
     
-    func start5SecondTimer(completion: @escaping () -> Void) {
-        configureTimer(totalSeconds: 5, updateProgress: false, completion: completion)
-    }
     
-    func start2SecondTimer(completion: @escaping () -> Void) {
-        configureTimer(totalSeconds: 2, updateProgress: false, completion: completion)
+    func pauseTimer() {
+        guard timer != nil else { return }
+    
+        timer?.invalidate()
+        timer = nil
     }
     
     func stopTimer() {
