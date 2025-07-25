@@ -6,8 +6,17 @@
 //
 
 import Foundation
+import Combine
 
 final class GameViewModel: ObservableObject {
+    
+    // MARK: - Services
+    let timerService: ITimerService
+    let audioService: IAudioService
+
+    private var cancellables = Set<AnyCancellable>()
+    
+    
     /// Обработчик изменения состояния игры
     private let onSessionUpdated: (GameSession) -> Void
     
@@ -29,7 +38,7 @@ final class GameViewModel: ObservableObject {
     /// Недоступные для выбора варианты ответов
     @Published private(set) var disabledAnswers: Set<String> = []
     
-    let duration: String = "00:00"
+    @Published var duration: String = "00:00"
     
     var question: Question { session.currentQuestion }
     
@@ -46,15 +55,59 @@ final class GameViewModel: ObservableObject {
 //    MARK: Init
     init(
         initialSession: GameSession,
-        onSessionUpdated: @escaping (GameSession) -> Void = { _ in }
+        onSessionUpdated: @escaping (GameSession) -> Void = { _ in },
+        audioService: IAudioService = AudioService(),
+        timerService: ITimerService = TimerService()
     ) {
         self.session = initialSession
         self.onSessionUpdated = onSessionUpdated
+        self.audioService = audioService
+        self.timerService = timerService
         
         answers = initialSession.currentQuestion.allAnswers.shuffled()
+        
+        bindTimer()
     }
     
+
+    
+    // MARK: - Game Start
+    func startGame() {
+        audioService.playGameSfx()
+
+        timerService.start30SecondTimer { [weak self] in
+            self?.onTimeExpired()
+        }
+    }
+    
+    private func onTimeExpired() {
+        audioService.playAnswerLockedSfx()
+        stopGameResources()
+    }
+
+    private func stopGameResources() {
+        audioService.stop()
+        timerService.stopTimer()
+    }
+    // MARK: - Timer Binding
+       private func bindTimer() {
+           timerService.progressPublisher
+               .map { progress in
+                   let totalSeconds: Int = 30
+                   let elapsed = Int(Float(totalSeconds) * progress)
+                   let remaining = max(0, totalSeconds - elapsed)
+                   let minutes = remaining / 60
+                   let seconds = remaining % 60
+                   return String(format: "%02d:%02d", minutes, seconds)
+               }
+               .receive(on: DispatchQueue.main)
+               .assign(to: &$duration)
+       }
+    
+    // MARK: - Answer Tap
     func onAnswer(letter: AnswerLetter) {
+        stopGameResources()
+        
         let answerIndex = letter.answerIndex
         
         var newSession = session

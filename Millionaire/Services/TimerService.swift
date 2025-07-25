@@ -10,135 +10,74 @@ import Combine
 
 // MARK: - Protocol
 
-protocol ITimeManager {
+protocol ITimerService {
     var progressPublisher: Published<Float>.Publisher { get }
 
     func start30SecondTimer(completion: @escaping () -> Void)
-    func stop30SecondTimer()
 
     func start5SecondTimer(completion: @escaping () -> Void)
-    func stop5SecondTimer()
 
     func start2SecondTimer(completion: @escaping () -> Void)
-    func stopAllTimers()
+    
+    func stopTimer()
 }
 
 // MARK: - Implementation
 
-final class TimeManager: ITimeManager {
+final class TimerService: ITimerService {
 
-    // MARK: - Published Properties
-
-    @Published private(set) var progress: Float = 0.0
+    @Published var progress: Float = 0.0
     var progressPublisher: Published<Float>.Publisher { $progress }
-
-    // MARK: - Timers
-
-    private var timer30: Timer?
-    private var timer5: Timer?
-    private var timer2: Timer?
-
-    // MARK: - State
-
-    private var elapsed30 = 0
-    private var elapsed5 = 0
-    private var elapsed2 = 0
-
-    private let total30 = 30
-
-    // MARK: - Completion Handlers
-
-    private var onComplete30: (() -> Void)?
-    private var onComplete5: (() -> Void)?
-    private var onComplete2: (() -> Void)?
-
-    // MARK: - Init
-
-    init() {}
-
+    
+    private var timer: Timer?
+    private var elapsed: Int = 0
+    private var total: Int = 0
+    private var onComplete: (() -> Void)?
+    
     // MARK: - Public API
-
     func start30SecondTimer(completion: @escaping () -> Void) {
-        onComplete30 = completion
-        reset30()
-        timer30 = Timer.scheduledTimer(timeInterval: 1.0,
-                                       target: self,
-                                       selector: #selector(update30),
-                                       userInfo: nil,
-                                       repeats: true)
+        configureTimer(totalSeconds: 30, updateProgress: true, completion: completion)
     }
-
-    func stop30SecondTimer() {
-        timer30?.invalidate()
-        timer30 = nil
-    }
-
+    
     func start5SecondTimer(completion: @escaping () -> Void) {
-        onComplete5 = completion
-        elapsed5 = 0
-        timer5 = Timer.scheduledTimer(timeInterval: 1.0,
-                                      target: self,
-                                      selector: #selector(update5),
-                                      userInfo: nil,
-                                      repeats: true)
+        configureTimer(totalSeconds: 5, updateProgress: false, completion: completion)
     }
-
-    func stop5SecondTimer() {
-        timer5?.invalidate()
-        timer5 = nil
-        elapsed5 = 0
-    }
-
+    
     func start2SecondTimer(completion: @escaping () -> Void) {
-        onComplete2 = completion
-        elapsed2 = 0
-        timer2 = Timer.scheduledTimer(timeInterval: 1.0,
-                                      target: self,
-                                      selector: #selector(update2),
-                                      userInfo: nil,
-                                      repeats: true)
+        configureTimer(totalSeconds: 2, updateProgress: false, completion: completion)
     }
-
-    func stopAllTimers() {
-        stop30SecondTimer()
-        stop5SecondTimer()
-        timer2?.invalidate()
-        timer2 = nil
+    
+    func stopTimer() {
+        timer?.invalidate()
+        timer = nil
+        progress = 0.0
+        elapsed = 0
+        total = 0
     }
-
-    // MARK: - Private Helpers
-
-    private func reset30() {
-        elapsed30 = 0
-        progress = 0
-    }
-
-    // MARK: - Timer Selectors
-
-    @objc private func update30() {
-        elapsed30 += 1
-        progress = Float(elapsed30) / Float(total30)
-
-        if elapsed30 >= total30 {
-            stop30SecondTimer()
-            onComplete30?()
+    
+    // MARK: - Private
+    private func configureTimer(totalSeconds: Int, updateProgress: Bool, completion: @escaping () -> Void) {
+        stopTimer()
+        self.elapsed = 0
+        self.total = totalSeconds
+        self.onComplete = completion
+        
+        if updateProgress {
+            self.progress = 0
         }
-    }
+        
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            self.elapsed += 1
+            
+            if updateProgress {
+                self.progress = Float(self.elapsed) / Float(self.total)
+            }
 
-    @objc private func update5() {
-        elapsed5 += 1
-        if elapsed5 >= 5 {
-            stop5SecondTimer()
-            onComplete5?()
-        }
-    }
-
-    @objc private func update2() {
-        elapsed2 += 1
-        if elapsed2 >= 2 {
-            timer2?.invalidate()
-            timer2 = nil
-            onComplete2?()
+            if self.elapsed >= self.total {
+                self.stopTimer()
+                self.onComplete?()
+            }
         }
     }
 }

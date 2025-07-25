@@ -35,6 +35,9 @@ struct GameScreen: View {
             //.allowsHitTesting(viewModel.selectedAnswer == nil)
             .padding(20)
         }
+        .onAppear {
+            viewModel.startGame()
+        }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
