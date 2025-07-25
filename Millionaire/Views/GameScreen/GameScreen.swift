@@ -32,8 +32,11 @@ struct GameScreen: View {
                     .padding(.vertical, 20)
                 helpButtons()
             }
-            //.allowsHitTesting(viewModel.selectedAnswer == nil)
+            .allowsHitTesting(viewModel.selectedAnswer == nil)
             .padding(20)
+        }
+        .onAppear {
+            viewModel.startGame()
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -98,9 +101,9 @@ struct GameScreen: View {
                     text: answer,
                     state: .regular
                 ) {
-                    viewModel.onAnswer(letter: letter)
+                    viewModel.onAnswer(answer)
                 }
-                .disabled(viewModel.disabledAnswers.contains(answer))
+                .disabled(viewModel.selectedAnswer == answer)
             }
         }
     }
@@ -127,6 +130,20 @@ struct GameScreen: View {
                 action: viewModel.callYourFriendButtonTap
             )
             .disabled(!viewModel.lifelines.contains(.callToFriend))
+        }
+    }
+    
+    private func buttonState(for answer: String) -> MillionaireAnswerButtonStyle.AnswerState {
+        guard let selected = viewModel.selectedAnswer else {
+            return .regular
+        }
+
+        if answer == selected {
+            return viewModel.lastAnswerWasCorrect ? .correct : .wrong
+        } else if !viewModel.lastAnswerWasCorrect && answer == viewModel.question.correctAnswer {
+            return .correct 
+        } else {
+            return .regular
         }
     }
 }
