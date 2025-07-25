@@ -9,7 +9,7 @@ import SwiftUI
 
 struct GameScreen: View {
     @ObservedObject var viewModel: GameViewModel
-
+    
     //    MARK: Init
     init(viewModel: GameViewModel) {
         self.viewModel = viewModel
@@ -18,7 +18,7 @@ struct GameScreen: View {
     // MARK: - Body
     var body: some View {
         ZStack {
-            Color.answerGradient3.ignoresSafeArea()
+            AnimatedGradientBackgroundView()
             
             VStack {
                 timerView()
@@ -28,11 +28,11 @@ struct GameScreen: View {
                     .padding(.top, 20)
                     .padding(.bottom, 20)
                 
-                
                 answerButtons()
                     .padding(.vertical, 20)
                 helpButtons()
             }
+            //.allowsHitTesting(viewModel.selectedAnswer == nil)
             .padding(20)
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -88,20 +88,24 @@ struct GameScreen: View {
         }
     }
     
+    
     // MARK: - Answer Buttons
     private func answerButtons() -> some View {
         VStack(spacing: 20) {
             ForEach(Array(zip(AnswerLetter.allCases, viewModel.answers)), id: \.0) { letter, answer in
-                AnswerButton(
-                    letter: letter,
+                Button.millionaireAnswer(
+                    letter: letter.rawValue,
                     text: answer,
-                    answerState: AnswerState.normal,
-                    action: { viewModel.onAnswer(letter: letter) }
-                )
+                    state: .regular
+                ) {
+                    viewModel.onAnswer(letter: letter)
+                }
                 .disabled(viewModel.disabledAnswers.contains(answer))
             }
         }
     }
+    
+    
     
     // MARK: - Help Buttons
     private func helpButtons() -> some View {

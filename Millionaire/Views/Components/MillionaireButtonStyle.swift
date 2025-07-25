@@ -6,6 +6,10 @@
 //
 import SwiftUI
 
+// MARK: - Answer Letters (A, B, C, D)
+enum AnswerLetter: String, CaseIterable {
+    case a = "A", b = "B", c = "C", d = "D"
+}
 // MARK: - Millionaire Button Style (Image-Based Only)
 
 /// Кастомный стиль кнопки для игры "Кто хочет стать миллионером?"
