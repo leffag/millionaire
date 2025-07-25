@@ -179,53 +179,51 @@ final class GameViewModel: ObservableObject {
     
     @MainActor
     private func processAnswer(_ answer: String) async {
-        
         var newSession = session
         
         guard let answerResult = newSession.answer(answer: answer) else {
             isProcessingAnswer = false
             return
         }
-        
+
+        // Сохраняем выбранный ответ — важно для подсветки
+        selectedAnswer = answer
+
         // Обновляем сессию
         session = newSession
         showResult = true
         lastAnswerWasCorrect = answerResult == .correct
-      
-        
-        // Играем соответствующий звук
+
+        // Звук
         switch answerResult {
         case .correct:
             audioService.playCorrectAnswerSfx()
         case .incorrect:
             audioService.playWrongAnswerSfx()
         }
-        
-        
-        // Ждем, пока покажем результат
+
+        // Ждём анимации результата
         do {
             try await Task.sleep(for: .seconds(2))
             try Task.checkCancellation()
-            
-            // Переходим дальше
+
             showResult = false
             isProcessingAnswer = false
-            selectedAnswer = nil
-            
+
             if answerResult == .correct && !session.isFinished {
-                // Готовим следующий вопрос
+                // Подготовка следующего вопроса
+                selectedAnswer = nil  // <-- переносим сюда
                 answers = session.currentQuestion.allAnswers.shuffled()
                 startGame()
             } else {
                 // Игра окончена
                 checkGameEnd()
             }
-            
+
         } catch {
             // Отменено
             showResult = false
             isProcessingAnswer = false
-            selectedAnswer = nil
         }
     }
     
