@@ -7,7 +7,7 @@
 
 import Foundation
 
-/// Менеджер, хранящий актуальные данные об игре
+/// Менеджер, хранящий  глобальное состояние (сессия, bestScore)
 final class GameManager {
     private let networkService: NetworkService
     
