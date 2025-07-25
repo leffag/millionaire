@@ -189,13 +189,14 @@ final class GameViewModel: ObservableObject {
         
         // Сохраняем выбранный ответ — важно для подсветки
         selectedAnswer = answer
+        correctAnswer = newSession.currentQuestion.correctAnswer
         
         // Обрабатываем ответ — получаем результат, но не начисляем тут ничего
         guard let answerResult = newSession.answer(answer: answer) else {
 //            isProcessingAnswer = false
             return
         }
-        
+
         // Начисляем призы исподбзуя PrizeCalculator
         switch answerResult {
         case .correct:
