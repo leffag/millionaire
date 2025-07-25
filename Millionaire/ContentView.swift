@@ -8,13 +8,11 @@
 import SwiftUI
 
 struct ContentView: View {
-    @EnvironmentObject var gameManager: GameManager
     var body: some View {
-        HomeView(gameManager: gameManager)
+        HomeView(gameManager: GameManager())
     }
 }
 
 #Preview {
     ContentView()
-        .environmentObject(GameManager())
 }

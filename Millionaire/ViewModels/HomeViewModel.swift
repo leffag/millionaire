@@ -19,16 +19,21 @@ final class HomeViewModel: ObservableObject {
     @Published var errorMessage: String = ""
     
     // MARK: - Dependencies
-    private var gameManager: GameManager
+    private let gameManager: GameManager
     
     // MARK: - Computed Properties
     var hasActiveGame: Bool {
-        gameManager.currentSession?.isFinished == false
+        gameManager.lastSession?.isFinished == false
     }
     
     // MARK: - Init
-    init(gameManager: GameManager) {
+    init(gameManager: GameManager = GameManager()) {
         self.gameManager = gameManager
+        updateViewState()
+    }
+    
+    // MARK: - Public Methods
+    func onAppear() {
         updateViewState()
     }
     
@@ -53,9 +58,8 @@ final class HomeViewModel: ObservableObject {
     
     // MARK: - Private Methods
     private func updateViewState() {
-        
         viewMode = HomeViewMode(
-            hasActiveSession: gameManager.currentSession?.isFinished == false,
+            hasActiveSession: gameManager.lastSession?.isFinished == false,
             hasScore: gameManager.bestScore > 0
         )
         bestScore = gameManager.bestScore
@@ -72,7 +76,6 @@ final class HomeViewModel: ObservableObject {
     }
     
     private func startNewGameFlow() async {
-        
         // Показываем загрузку
         navigationPath = [.loading]
         isLoading = true
@@ -96,7 +99,7 @@ final class HomeViewModel: ObservableObject {
     }
     
     private func continueExistingGame() {
-        guard let session = gameManager.currentSession, !session.isFinished else {
+        guard let session = gameManager.lastSession, !session.isFinished else {
             errorMessage = "Нет активной игры для продолжения"
             showError = true
             return
@@ -107,10 +110,10 @@ final class HomeViewModel: ObservableObject {
     
     // MARK: - Game Session Updates
     func createGameViewModel(for session: GameSession) -> GameViewModel {
-        GameViewModel(
+        return GameViewModel(
             initialSession: session,
             onSessionUpdated: { [weak self] updatedSession in
-                self?.gameManager.updateSession(updatedSession)
+                self?.gameManager.lastSession = updatedSession
             }
         )
     }

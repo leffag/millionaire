@@ -41,13 +41,10 @@ enum GameType {
 typealias ButtonVariant = MillionaireButtonStyle.Variant
 
 struct HomeView: View {
-    
     @StateObject private var viewModel: HomeViewModel
     @State private var showRules = false
     
-    @EnvironmentObject var gameManager: GameManager
-    
-    init(gameManager: GameManager) {
+    init(gameManager: GameManager = GameManager()) {
         self._viewModel = StateObject(wrappedValue: HomeViewModel(gameManager: gameManager))
     }
     
@@ -86,6 +83,9 @@ struct HomeView: View {
             .navigationDestination(for: HomeViewModel.NavigationRoute.self) { route in
                 destinationView(for: route)
             }
+        }
+        .onAppear {
+            viewModel.onAppear()
         }
         .onChange(of: viewModel.navigationPath) { newPath in
             viewModel.onNavigationChange(newPath)
