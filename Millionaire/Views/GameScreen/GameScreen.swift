@@ -99,7 +99,7 @@ struct GameScreen: View {
                 Button.millionaireAnswer(
                     letter: letter.rawValue,
                     text: answer,
-                    state: .regular
+                    state: buttonState(for: answer)
                 ) {
                     viewModel.onAnswer(answer)
                 }
@@ -138,13 +138,25 @@ struct GameScreen: View {
             return .regular
         }
 
-        if answer == selected {
-            return viewModel.lastAnswerWasCorrect ? .correct : .wrong
-        } else if !viewModel.lastAnswerWasCorrect && answer == viewModel.question.correctAnswer {
-            return .correct 
-        } else {
-            return .regular
+        // Подсвечиваем выбранную кнопку
+        if selected == answer {
+            switch viewModel.answerResultState {
+            case .correct:
+                return .correct
+            case .incorrect:
+                return .wrong
+            case .none:
+                return .regular
+            }
         }
+
+        // Если выбран неправильный ответ, но это — правильный
+        if viewModel.answerResultState == .incorrect,
+           answer == viewModel.correctAnswer {
+            return .correct
+        }
+
+        return .regular
     }
 }
 
