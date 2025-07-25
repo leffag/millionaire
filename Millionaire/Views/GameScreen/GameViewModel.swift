@@ -8,12 +8,23 @@
 import Foundation
 import Combine
 
+// MARK: - Navigation States
+extension GameViewModel {
+    enum GameNavigationState {
+        case playing
+        case showingResult
+        case gameOver(score: Int, questionReached: Int)
+        case victory(score: Int)
+    }
+}
+
+// локальное UI состояние + управление сервисами
 final class GameViewModel: ObservableObject {
     
     // MARK: - Services
     let timerService: ITimerService
     let audioService: IAudioService
-
+    
     private var cancellables = Set<AnyCancellable>()
     
     
@@ -40,9 +51,24 @@ final class GameViewModel: ObservableObject {
     
     @Published var duration: String = "00:00"
     
-    var question: Question { session.currentQuestion }
+    // Доп состояния для UI
+    @Published private(set) var isProcessingAnswer = false
+    @Published private(set) var showResult = false
+    @Published private(set) var lastAnswerWasCorrect = false
+    @Published var shouldShowGameOver = false
+    @Published var shouldShowVictory = false
     
-    let difficult: QuestionDifficulty = .easy
+    @Published var navigationState: GameNavigationState = .playing
+    
+    // Храним текущую задачу для возможности отмены
+    private var answerProcessingTask: Task<Void, Never>?
+    
+    // Важно: отменять задачу при деинициализации
+    deinit {
+        answerProcessingTask?.cancel()
+    }
+    
+    var question: Question { session.currentQuestion }
     
     var numberQuestion: Int { session.currentQuestionIndex + 1 }
     
@@ -52,7 +78,7 @@ final class GameViewModel: ObservableObject {
     
     var lifelines: Set<Lifeline> { session.lifelines }
     
-//    MARK: Init
+    //    MARK: Init
     init(
         initialSession: GameSession,
         onSessionUpdated: @escaping (GameSession) -> Void = { _ in },
@@ -69,12 +95,10 @@ final class GameViewModel: ObservableObject {
         bindTimer()
     }
     
-
-    
     // MARK: - Game Start
     func startGame() {
         audioService.playGameSfx()
-
+        
         timerService.start30SecondTimer { [weak self] in
             self?.onTimeExpired()
         }
@@ -84,51 +108,132 @@ final class GameViewModel: ObservableObject {
         audioService.playAnswerLockedSfx()
         stopGameResources()
     }
-
+    
     private func stopGameResources() {
         audioService.stop()
         timerService.stopTimer()
     }
     // MARK: - Timer Binding
-       private func bindTimer() {
-           timerService.progressPublisher
-               .map { progress in
-                   let totalSeconds: Int = 30
-                   let elapsed = Int(Float(totalSeconds) * progress)
-                   let remaining = max(0, totalSeconds - elapsed)
-                   let minutes = remaining / 60
-                   let seconds = remaining % 60
-                   return String(format: "%02d:%02d", minutes, seconds)
-               }
-               .receive(on: DispatchQueue.main)
-               .assign(to: &$duration)
-       }
+    private func bindTimer() {
+        timerService.progressPublisher
+            .map { progress in
+                let totalSeconds: Int = 30
+                let elapsed = Int(Float(totalSeconds) * progress)
+                let remaining = max(0, totalSeconds - elapsed)
+                let minutes = remaining / 60
+                let seconds = remaining % 60
+                return String(format: "%02d:%02d", minutes, seconds)
+            }
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$duration)
+    }
     
     // MARK: - Answer Tap
     func onAnswer(letter: AnswerLetter) {
+        // Предотвращаем множественные нажатия
+           guard !isProcessingAnswer else { return }
+        
+            // Отменяем предыдущую задачу, если она есть
+            answerProcessingTask?.cancel() // Если пользователь быстро нажал другой ответ
+            
+        // Запускаем новую
+        answerProcessingTask = Task {
+            await processAnswerWithDelay(letter: letter)
+        }
+    }
+    
+    @MainActor
+    private func processAnswerWithDelay(letter: AnswerLetter) async {
+        isProcessingAnswer = true
+        
+        // Останавливаем игровые ресурсы
         stopGameResources()
         
-        let answerIndex = letter.answerIndex
+        // Играем звук интриги
+        audioService.playAnswerLockedSfx()
         
+        do {
+            // Ждем для драматизма
+            try await Task.sleep(for: .seconds(3))
+            
+            // Проверяем, не была ли задача отменена
+            try Task.checkCancellation()
+            
+            // Обрабатываем ответ
+            await processAnswer(letter: letter)
+            
+        } catch {
+            // Задача была отменена
+            isProcessingAnswer = false
+            audioService.stop()
+        }
+    }
+    
+    @MainActor
+    private func processAnswer(letter: AnswerLetter) async {
+        
+        let answerIndex = letter.answerIndex
         var newSession = session
         
         guard let answerResult = newSession.answer(answer: answers[answerIndex]) else {
+            isProcessingAnswer = false
             return
         }
         
+        // Обновляем сессию
+        session = newSession
+        showResult = true
+        lastAnswerWasCorrect = answerResult == .correct
+        
+        
+        // Играем соответствующий звук
         switch answerResult {
         case .correct:
-            // Ответили верно
-            // TODO: Тут можем поморгать кнопкой ответа
-            
-            session = newSession
-            answers = session.currentQuestion.allAnswers.shuffled()
-            
+            audioService.playCorrectAnswerSfx()
         case .incorrect:
-            // Ответили неверно
-            // TODO: Тут можем поморгать кнопкой ответа
+            audioService.playWrongAnswerSfx()
+        }
+        
+        
+        // Ждем, пока покажем результат
+        do {
+            try await Task.sleep(for: .seconds(2))
+            try Task.checkCancellation()
             
-            session = newSession
+            // Переходим дальше
+            showResult = false
+            isProcessingAnswer = false
+            
+            if answerResult == .correct && !session.isFinished {
+                // Готовим следующий вопрос
+                answers = session.currentQuestion.allAnswers.shuffled()
+                startGame()
+            } else {
+                // Игра окончена
+                checkGameEnd()
+            }
+            
+        } catch {
+            // Отменено
+            showResult = false
+            isProcessingAnswer = false
+        }
+    }
+    
+    private func checkGameEnd() {
+        if session.isFinished {
+            if session.currentQuestionIndex == 14 && lastAnswerWasCorrect {
+                print(" ПОБЕДА! Выигран миллион!")
+                navigationState = .victory(score: session.score)
+                //audioService.playVictorySfx()
+            } else {
+                print(" Игра окончена на вопросе \(session.currentQuestionIndex + 1)")
+                print(" Выигрыш: \(session.score) ")
+                navigationState = .gameOver(
+                    score: session.score,
+                    questionReached: session.currentQuestionIndex + 1
+                )
+            }
         }
     }
     
@@ -148,7 +253,7 @@ final class GameViewModel: ObservableObject {
             // Подсказка недоступна, не делаем ничего
             return
         }
-        
+        print(result)
         // TODO: Реализация подсказки
     }
     
@@ -157,7 +262,7 @@ final class GameViewModel: ObservableObject {
             // Подсказка недоступна, не делаем ничего
             return
         }
-        
+        print(result)
         // TODO: Реализация подсказки
     }
 }
