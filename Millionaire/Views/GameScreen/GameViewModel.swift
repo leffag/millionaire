@@ -26,7 +26,7 @@ final class GameViewModel: ObservableObject {
     let audioService: IAudioService
     
     private var cancellables = Set<AnyCancellable>()
-    
+    private let prizeCalculator = PrizeCalculator()
     
     /// Обработчик изменения состояния игры
     private let onSessionUpdated: (GameSession) -> Void
@@ -76,7 +76,9 @@ final class GameViewModel: ObservableObject {
     var numberQuestion: Int { session.currentQuestionIndex + 1 }
     
     var priceQuestion: String {
-        ScoreLogic.questionValues[session.currentQuestionIndex].formatted()
+        prizeCalculator
+            .getPrizeAmount(for: session.currentQuestionIndex)
+            .formatted()
     }
     
     var lifelines: Set<Lifeline> { session.lifelines }
@@ -181,17 +183,33 @@ final class GameViewModel: ObservableObject {
     private func processAnswer(_ answer: String) async {
         var newSession = session
         
+        // Сохраняем выбранный ответ — важно для подсветки
+        selectedAnswer = answer
+        
+        // Обрабатываем ответ — получаем результат, но не начисляем тут ничего
         guard let answerResult = newSession.answer(answer: answer) else {
             isProcessingAnswer = false
             return
         }
-
-        // Сохраняем выбранный ответ — важно для подсветки
-        selectedAnswer = answer
+        
+        // Начисляем призы исподбзуя PrizeCalculator
+        switch answerResult {
+        case .correct:
+            let prize = prizeCalculator.getPrizeAmount(for: session.currentQuestionIndex)
+            newSession.addScore(prize)
+            lastAnswerWasCorrect = true
+        case .incorrect:
+            let checkpoint = prizeCalculator.getCheckpointPrizeAmount(before: session.currentQuestionIndex)
+            newSession.setScore(checkpoint)
+            lastAnswerWasCorrect = false
+        }
 
         // Обновляем сессию
         session = newSession
+        
+        // Переход в состояние показа результата
         showResult = true
+        
         lastAnswerWasCorrect = answerResult == .correct
 
         // Звук
