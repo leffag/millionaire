@@ -2,14 +2,6 @@
 //  ScoreboardView.swift
 //  Millionaire
 //
-//  Created by Наташа Спиридонова on 25.07.2025.
-//
-
-
-//
-//  ScoreboardView.swift
-//  Millionaire
-//
 //  Created by Наташа Спиридонова on 24.07.2025.
 //
 
@@ -70,5 +62,16 @@ struct ScoreboardView: View {
 }
 
 #Preview {
-    ScoreboardView(viewModel: ScoreboardViewModel(currentLevel: 7))
+    let questions = (1...15).map { i in
+        Question(
+            difficulty: .easy,
+            category: "Общие знания",
+            question: "Вопрос?",
+            correctAnswer: "A",
+            incorrectAnswers: ["B", "C", "D"]
+        )
+    }
+    let session = GameSession(questions: questions, currentQuestionIndex: 0, score: 0)!
+    ScoreboardView(viewModel: ScoreboardViewModel(gameSession: session))
 }
+
