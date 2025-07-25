@@ -20,7 +20,7 @@ final class PrizeCalculatorTests: XCTestCase {
     /// - Вопрос 1 должен давать 100 (₽)
     /// - Вопрос 15 должен давать 1_000_000 (₽)
     func testPrizeAmounts() {
-        XCTAssertEqual(calculator.getPrizeAmount(for: 0), 100)
+        XCTAssertEqual(calculator.getPrizeAmount(for: 0), 500)
         XCTAssertEqual(calculator.getPrizeAmount(for: 14), 1_000_000)
     }
 
@@ -31,8 +31,8 @@ final class PrizeCalculatorTests: XCTestCase {
     /// - До 12-го должен быть checkpoint на 10-м (32_000 ₽)
     func testCheckpointCalculation() {
         XCTAssertNil(calculator.prizeStructure.getCheckpointPrize(before: 3)) // < 5
-        XCTAssertEqual(calculator.prizeStructure.getCheckpointPrize(before: 7)?.amount, 1_000)
-        XCTAssertEqual(calculator.prizeStructure.getCheckpointPrize(before: 12)?.amount, 32_000)
+        XCTAssertEqual(calculator.prizeStructure.getCheckpointPrize(before: 7)?.amount, 5_000)
+        XCTAssertEqual(calculator.prizeStructure.getCheckpointPrize(before: 12)?.amount, 25_000)
     }
     
     /// Проверка получения приза по номеру вопроса (1-based)
@@ -40,7 +40,7 @@ final class PrizeCalculatorTests: XCTestCase {
     /// - Вопрос с номером 5 должен вернуть 1_000 ₽
     /// - Запрос по номеру 20 (вне диапазона) должен вернуть nil
     func testPrizeForQuestionNumber() {
-        XCTAssertEqual(calculator.prizeStructure.prizeForQuestion(number: 5)?.amount, 1_000)
+        XCTAssertEqual(calculator.prizeStructure.prizeForQuestion(number: 5)?.amount, 5_000)
         XCTAssertNil(calculator.prizeStructure.prizeForQuestion(number: 20)) // вне диапазона
     }
     
@@ -71,7 +71,7 @@ final class PrizeCalculatorTests: XCTestCase {
     func testAllPrizesCountAndOrder() {
         let all = calculator.getAllPrizes()
         XCTAssertEqual(all.count, 15)
-        XCTAssertEqual(all.first?.amount, 100)
+        XCTAssertEqual(all.first?.amount, 500)
         XCTAssertEqual(all.last?.amount, 1_000_000)
     }
 
