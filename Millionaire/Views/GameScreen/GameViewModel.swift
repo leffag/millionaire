@@ -52,9 +52,12 @@ final class GameViewModel: ObservableObject {
     @Published var duration: String = "00:00"
     
     // Доп состояния для UI
+    @Published var selectedAnswer: String?
+    
     @Published private(set) var isProcessingAnswer = false
     @Published private(set) var showResult = false
     @Published private(set) var lastAnswerWasCorrect = false
+    
     @Published var shouldShowGameOver = false
     @Published var shouldShowVictory = false
     
@@ -113,6 +116,7 @@ final class GameViewModel: ObservableObject {
         audioService.stop()
         timerService.stopTimer()
     }
+    
     // MARK: - Timer Binding
     private func bindTimer() {
         timerService.progressPublisher
@@ -129,25 +133,29 @@ final class GameViewModel: ObservableObject {
     }
     
     // MARK: - Answer Tap
-    func onAnswer(letter: AnswerLetter) {
+    func onAnswer(_ answer: String) {
         // Предотвращаем множественные нажатия
            guard !isProcessingAnswer else { return }
         
             // Отменяем предыдущую задачу, если она есть
             answerProcessingTask?.cancel() // Если пользователь быстро нажал другой ответ
-            
+
+       
+//        обновляем значение выделленного ответа
+        selectedAnswer = answer
+        
         // Запускаем новую
         answerProcessingTask = Task {
-            await processAnswerWithDelay(letter: letter)
+            await processAnswerWithDelay(answer: answer)
         }
     }
     
     @MainActor
-    private func processAnswerWithDelay(letter: AnswerLetter) async {
+    private func processAnswerWithDelay(answer: String) async {
         isProcessingAnswer = true
         
-        // Останавливаем игровые ресурсы
-        stopGameResources()
+        //   Cтавим на паузу таймер
+        timerService.pauseTimer()
         
         // Играем звук интриги
         audioService.playAnswerLockedSfx()
@@ -160,7 +168,7 @@ final class GameViewModel: ObservableObject {
             try Task.checkCancellation()
             
             // Обрабатываем ответ
-            await processAnswer(letter: letter)
+            await processAnswer(answer)
             
         } catch {
             // Задача была отменена
@@ -170,12 +178,11 @@ final class GameViewModel: ObservableObject {
     }
     
     @MainActor
-    private func processAnswer(letter: AnswerLetter) async {
+    private func processAnswer(_ answer: String) async {
         
-        let answerIndex = letter.answerIndex
         var newSession = session
         
-        guard let answerResult = newSession.answer(answer: answers[answerIndex]) else {
+        guard let answerResult = newSession.answer(answer: answer) else {
             isProcessingAnswer = false
             return
         }
@@ -184,7 +191,7 @@ final class GameViewModel: ObservableObject {
         session = newSession
         showResult = true
         lastAnswerWasCorrect = answerResult == .correct
-        
+      
         
         // Играем соответствующий звук
         switch answerResult {
@@ -203,6 +210,7 @@ final class GameViewModel: ObservableObject {
             // Переходим дальше
             showResult = false
             isProcessingAnswer = false
+            selectedAnswer = nil
             
             if answerResult == .correct && !session.isFinished {
                 // Готовим следующий вопрос
@@ -217,6 +225,7 @@ final class GameViewModel: ObservableObject {
             // Отменено
             showResult = false
             isProcessingAnswer = false
+            selectedAnswer = nil
         }
     }
     
@@ -273,8 +282,3 @@ private extension Question {
     }
 }
 
-private extension AnswerLetter {
-    var answerIndex: Int {
-        Self.allCases.firstIndex(of: self)!
-    }
-}
