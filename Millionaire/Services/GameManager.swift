@@ -8,17 +8,19 @@
 import Foundation
 
 /// Менеджер, хранящий  глобальное состояние (сессия, bestScore)
-final class GameManager {
+
+@MainActor
+final class GameManager: ObservableObject {  // Управляет сессиями
     private let networkService: NetworkService
     
     /// Лучший результат, если он есть
     private(set) var bestScore: Int
     
     /// Модель последней игры, если она есть
-    var lastSession: GameSession? {
-        didSet {
-            updateBestScoreIfNeeded()
-        }
+    @Published private(set) var currentSession: GameSession?
+    
+    func updateSession(_ session: GameSession) {
+        self.currentSession = session
     }
     
     init(
@@ -30,7 +32,7 @@ final class GameManager {
         
         // TODO: Добавить чтение начальных значений из UserDefaults?
         self.bestScore = bestScore
-        self.lastSession = lastSession
+        self.currentSession = lastSession
     }
     
     /// Начинает новую игру
@@ -41,7 +43,7 @@ final class GameManager {
             throw StartGameFailure.invalidQuestions
         }
         
-        self.lastSession = initialSession
+        self.currentSession = initialSession
         
         return initialSession
     }
@@ -49,12 +51,12 @@ final class GameManager {
     /// Актуализирует лучший результат при изменении сессии
     private func updateBestScoreIfNeeded() {
         // Результат применяем только для завершенной игры
-        guard let lastSession, lastSession.isFinished else {
+        guard let currentSession, currentSession.isFinished else {
             return
         }
         
         // Сохраним результат, если он оказался больше ранее сохраненного
-        bestScore = max(bestScore, lastSession.score)
+        bestScore = max(bestScore, currentSession.score)
     }
 }
 
