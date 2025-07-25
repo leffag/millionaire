@@ -75,34 +75,33 @@ struct GameSession: Hashable {
         self.lifelines = lifelines
     }
     
+    
+    mutating func addScore(_ amount: Int) {
+        score += amount
+    }
+
+    mutating func setScore(_ amount: Int) {
+        score = amount
+    }
+    
     /// Функция, возвращающая результат, был ответ верный или нет, и переходящая к следующему вопросу, если таковой есть
     mutating func answer(answer: String) -> AnswerResult? {
         // Проверяем, что игра не закончена
-        guard !isFinished else {
-            return nil
-        }
+        guard !isFinished else { return nil }
         
-        // Убеждаемся, что ответ правильный
         if answer == currentQuestion.correctAnswer {
-            // Увеличиваем счет на цену текущего вопроса. Цену берем из ScoreLogic по индексу текущего вопроса.
-            score += ScoreLogic.questionValues[currentQuestionIndex]
+            // Ничего не начисляем — пусть это делает GameManager
+            // Просто переходим к следующему вопросу
             
-            // Проверяем, есть ли следующий вопрос
-            let hasNextQuestion = currentQuestionIndex + 1 < questions.count
-            
-            // Если да, увеличиваем индекс текущего вопроса, иначе заканчиваем игру
-            if hasNextQuestion {
+            // есть ли следующий вопрос
+            if currentQuestionIndex + 1 < questions.count {
                 currentQuestionIndex += 1
-            } else {
+            } else { // иначе заканчиваем игру
                 isFinished = true
             }
-            
-            // Возвращаем результат о том, что ответ был верный
             return .correct
         } else {
-            // Если ответ неверный, в счет записываем несгораемую сумму.
-            // Заканчиваем игру и возращаем результат о том, что был дан неверный ответ
-            score = ScoreLogic.findClosestCheckpointScore(questionIndex: currentQuestionIndex)
+            // Отметим, что игра завершена. Какую сумму дать - решает GameManager.
             isFinished = true
             return .incorrect
         }
