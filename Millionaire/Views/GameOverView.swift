@@ -77,6 +77,7 @@ struct GameOverView: View {
                 .padding(.bottom, 40)
             }
         }
+        .navigationBarBackButtonHidden()
     }
     
     @ViewBuilder
