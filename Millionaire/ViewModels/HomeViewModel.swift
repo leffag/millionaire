@@ -111,6 +111,10 @@ final class HomeViewModel: ObservableObject {
             initialSession: session,
             onSessionUpdated: { [weak self] updatedSession in
                 self?.gameManager.updateSession(updatedSession)
+            },
+            onGameFinished: { [weak self] in
+                // Возвращаемся на главный экран
+                self?.navigationPath.removeAll()
             }
         )
     }

@@ -45,8 +45,26 @@ struct GameScreen: View {
             }
             
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: {}) {
+                Button(action: {
+                    //viewModel.navigationPath.append(.scoreboard(session: viewModel.currentSession,
+                    //                                            mode: .gameOver))
+                    viewModel.testScoreboard()
+                }) {
                     Image(ImageResource.iconLevels)
+                }
+            }
+        }
+        //  Добавляем навигацию к скорборду
+        .fullScreenCover(
+            isPresented: .constant(viewModel.shouldShowScoreboard),
+            onDismiss: {
+                viewModel.handleScoreboardDismiss()
+            }
+        ) {
+            if let scoreboardState = viewModel.currentScoreboardState,
+               case .scoreboard(let session, let mode) = scoreboardState {
+                ScoreboardView(session: session, mode: mode) {
+                    viewModel.handleScoreboardDismiss()
                 }
             }
         }
@@ -157,6 +175,21 @@ struct GameScreen: View {
         }
 
         return .regular
+    }
+    
+    @ViewBuilder
+    private func destinationView(for state: GameViewModel.GameNavigationState) -> some View {
+        switch state {
+        case .scoreboard(let session, let mode):
+            ScoreboardView(
+                session: session,
+                mode: mode
+            ) {
+                viewModel.handleScoreboardDismiss()
+            }
+        case .playing, .showingResult:
+            EmptyView()
+        }
     }
 }
 

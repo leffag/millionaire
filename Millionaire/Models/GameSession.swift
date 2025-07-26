@@ -36,7 +36,12 @@ struct GameSession: Hashable {
     let questions: [Question]
     
     /// Флаг, указывающий, завершена игра или нет
+    ///  Игра завершена если:
+    // 1. Дали неправильный ответ
+    // 2. Ответили на все 15 вопросов
+    // 3. Время вышло
     private(set) var isFinished: Bool
+    
     /// Индекс текущего вопроса
     private(set) var currentQuestionIndex: Int
     /// Заработанный счет
