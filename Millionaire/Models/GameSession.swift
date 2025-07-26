@@ -117,14 +117,20 @@ struct GameSession: Hashable {
         guard canUse(lifeline: .fiftyFifty) else {
             return nil
         }
-        
+
         lifelines.remove(.fiftyFifty)
-        
-        return FiftyFiftyLifelineResult(
-            disabledAnswers: Set(
-                currentQuestion.incorrectAnswers.shuffled().prefix(2)
-            )
-        )
+
+        // Выбираем один случайный неправильный ответ
+        guard let randomIncorrect = currentQuestion.incorrectAnswers.randomElement() else {
+            return nil
+        }
+
+        // Все ответы, кроме правильного и одного неправильного, отключаем
+        let allAnswers = Set(currentQuestion.incorrectAnswers)
+        let enabledAnswers: Set<String> = [currentQuestion.correctAnswer, randomIncorrect]
+        let disabledAnswers = allAnswers.subtracting(enabledAnswers)
+
+        return FiftyFiftyLifelineResult(disabledAnswers: disabledAnswers)
     }
     
     mutating func useAudienceLifeline() -> AudienceLifelineResult? {
