@@ -91,6 +91,7 @@ struct ScoreboardView: View {
                                 message: "You lost. Your prize is $0.",
                                 onDismiss: {
                                     showGameOverZeroAlert = false
+                                    viewModel.deinitAudioService()
                                     onClose()
                                 },
                                 showSecondButton: false
