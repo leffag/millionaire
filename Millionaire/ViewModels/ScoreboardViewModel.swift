@@ -10,6 +10,8 @@ import Foundation
 final class ScoreboardViewModel: ObservableObject {
     @Published var levels: [ScoreboardRow] = []
     
+    private let prizeCalculator = PrizeCalculator()
+    
     private var gameSession: GameSession
     init(gameSession: GameSession) {
         self.gameSession = gameSession
@@ -17,17 +19,15 @@ final class ScoreboardViewModel: ObservableObject {
     }
     
     func updateLevels() {
-        let currentLevel = gameSession.currentQuestionIndex + 1
-        let checkpoints = ScoreLogic.checkpointIndices
-        let values = ScoreLogic.questionValues.reversed()
-        self.levels = zip((1...15).reversed(), values).map { num, amount in
+        let prizes = prizeCalculator.getAllPrizes().reversed()
+        self.levels = prizes.map { prize in
             ScoreboardRow(
-                id: num,
-                number: num,
-                amount: amount,
-                isCheckpoint: checkpoints.contains(num),
-                isCurrent: num == currentLevel,
-                isTop: num == 15
+                id: prize.questionNumber,
+                number: prize.questionNumber,
+                amount: prize.amount,
+                isCheckpoint: prize.isCheckpoint,
+                isCurrent: prize.questionNumber == gameSession.currentQuestionIndex+1,
+                isTop: prize.questionNumber == 15
             )
         }
     }

@@ -5,14 +5,6 @@
 //  Created by Наташа Спиридонова on 25.07.2025.
 //
 
-
-//
-//  Scoreboard.swift
-//  Millionaire
-//
-//  Created by Наташа Спиридонова on 25.07.2025.
-//
-
 import Foundation
 
 enum ScoreboardRowType: String {
