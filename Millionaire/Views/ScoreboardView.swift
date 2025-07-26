@@ -105,7 +105,7 @@ struct ScoreboardView: View {
         .onAppear {
                     viewModel.playSound(mode: mode)
 
-                    if mode == .gameOver && viewModel.currentPrize == 0 {
+                    if mode == .gameOver && viewModel.currentPrize < 5000 {
                         Task {
                             try await Task.sleep(for: .seconds(2))
                             withAnimation {
