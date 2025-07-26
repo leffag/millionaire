@@ -121,46 +121,4 @@ final class HomeViewModel: ObservableObject {
         navigationCoordinator.showGame(session)
     }
     
-//    // MARK: - Game Session Updates
-//    func createGameViewModel(for session: GameSession) -> GameViewModel {
-//            GameViewModel(
-//                initialSession: session,
-//                onSessionUpdated: { [weak self] updatedSession in
-//                    self?.gameManager.updateSession(updatedSession)
-//                },
-//                onGameFinished: { [weak self] in
-//                    // Возвращаемся на главный экран
-//                    self?.navigationPath.removeAll()
-//                },
-//                // GameViewModel не управляет навигацией
-//                // Вместо этого уведомляет родительский компонент
-//                onNavigateToScoreboard: { [weak self] session, mode in
-//                    // Добавляем скорборд в навигацию
-//                    self?.navigationPath.append(.scoreboard(session, mode))
-//                }
-//            )
-//        }
 }
-
-//
-// Поток навигации:
-//
-//HomeView
-//    ├── LoadingView
-//    ├── GameScreen
-//    │   └── ScoreboardView (через toolbar button)
-//    │       ├── [intermediate] → назад к GameScreen
-//    │       └── [gameOver/victory] → GameOverView
-//    └── GameOverView
-//        ├── New Game → HomeView → LoadingView → GameScreen
-//        └── Main Screen → HomeView
-
-//// MARK: - Navigation Routes
-//extension HomeViewModel {
-//    enum NavigationRoute: Hashable {
-//        case loading
-//        case game(GameSession)
-//        case scoreboard(GameSession, GameViewModel.ScoreboardMode)
-//        case gameOver(GameSession, GameViewModel.ScoreboardMode)
-//    }
-//}

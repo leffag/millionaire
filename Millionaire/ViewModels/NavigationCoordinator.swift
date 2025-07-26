@@ -86,6 +86,27 @@ final class NavigationCoordinator: ObservableObject {
         }
     }
     
+    // MARK: - GameOver Actions
+    
+    func startNewGameFromGameOver() {
+        // Очищаем стек навигации
+        popToRoot() /// начинает анимацию возврата
+        
+        // Запускаем новую игру после возврата на главный экран
+        Task { @MainActor in
+            // Небольшая задержка - ждем завершения анимации навигации
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 сек
+            
+            // Запускаем новую игру
+            homeViewModel?.startNewGame() /// сразу добавляет новый маршрут
+        }
+    }
+    
+    func returnToMainScreenFromGameOver() {
+        // Просто возвращаемся на главный экран
+        popToRoot()
+    }
+    
     // MARK: - View Factory
     @ViewBuilder
     func destinationView(for route: NavigationRoute) -> some View {
@@ -126,12 +147,11 @@ final class NavigationCoordinator: ObservableObject {
                 mode: mode,
                 onNewGame: { [weak self] in
                     // Очищаем навигацию и начинаем новую игру
-                    self?.popToRoot()
-                    self?.homeViewModel?.startNewGame()
+                    self?.startNewGameFromGameOver()
                 },
                 onMainScreen: { [weak self] in
                     // Возвращаемся на главный экран
-                    self?.popToRoot()
+                    self?.returnToMainScreenFromGameOver()
                 }
             )
         }

@@ -26,6 +26,34 @@ final class AudioService: IAudioService {
     }
     
     private var player: AVAudioPlayer?
+    
+    init() {
+        // Настройка аудио сессии для игры
+        configureAudioSession()
+    }
+    
+    deinit {
+        // Нужен для
+        // немедленной остановки звука (не ждем ARC) - четкое завершения воспроизведения и
+        // освобождение аудиоресурсов
+        player?.stop()
+        player = nil
+        
+#if DEBUG
+        print("AudioService деинициализирован")
+#endif
+    }
+    
+    // MARK: - Private Methods
+    
+    private func configureAudioSession() {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("Failed to configure audio session: \(error)")
+        }
+    }
 
     private func play(resource: ResourceSfx) {
         guard let url = Bundle.main.url(forResource: resource.rawValue, withExtension: "mp3") else {
@@ -34,7 +62,11 @@ final class AudioService: IAudioService {
         }
 
         do {
+            // Останавливаем предыдущий звук перед воспроизведением нового
+            player?.stop()
+            
             player = try AVAudioPlayer(contentsOf: url)
+            player?.prepareToPlay() // Предзагрузка для уменьшения задержки
             player?.play()
         } catch {
             print("Failed to play audio: \(error.localizedDescription)")
@@ -58,8 +90,17 @@ final class AudioService: IAudioService {
         play(resource: .answerLockedSfx)
     }
     
+    func pause() {
+         player?.pause()
+     }
+     
+     func resume() {
+         player?.play()
+     }
+    
     func stop() {
         player?.stop()
+        player?.currentTime = 0 // Сброс позиции воспроизведения
         player = nil
     }
 }

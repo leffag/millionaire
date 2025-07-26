@@ -20,7 +20,7 @@ protocol ITimerService {
 // MARK: - Implementation
 
 final class TimerService: ITimerService {
-
+    
     @Published var progress: Float = 0.0
     var progressPublisher: Published<Float>.Publisher { $progress }
     
@@ -28,6 +28,18 @@ final class TimerService: ITimerService {
     private var elapsed: Int = 0
     private var total: Int = 0
     private var onComplete: (() -> Void)?
+    
+    // MARK: - Deinit
+    deinit {
+        // ВАЖНО! Обязательно останавливаем таймер
+        timer?.invalidate()
+        timer = nil
+        
+        //Если при возврате назад нет этих сообщений - есть утечка!
+#if DEBUG
+        print("TimerService деинициализирован")
+#endif
+    }
     
     // MARK: - Public API
     func start30SecondTimer(completion: @escaping () -> Void) {
@@ -37,9 +49,25 @@ final class TimerService: ITimerService {
     
     func pauseTimer() {
         guard timer != nil else { return }
-    
+        
         timer?.invalidate()
         timer = nil
+    }
+    
+    func resumeTimer() {
+        // Возобновляем с текущего места
+        guard timer == nil, total > 0, elapsed < total else { return }
+        
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            self.elapsed += 1
+            self.progress = Float(self.elapsed) / Float(self.total)
+            
+            if self.elapsed >= self.total {
+                self.stopTimer()
+                self.onComplete?()
+            }
+        }
     }
     
     func stopTimer() {
@@ -61,6 +89,10 @@ final class TimerService: ITimerService {
             self.progress = 0
         }
         
+        // Timer держит RunLoop
+        // он добавляется в главный RunLoop
+        // RunLoop держит сильную ссылку на Timer ->
+        // Timer может пережить этот TimerService сервис!
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self else { return }
             self.elapsed += 1
@@ -68,7 +100,7 @@ final class TimerService: ITimerService {
             if updateProgress {
                 self.progress = Float(self.elapsed) / Float(self.total)
             }
-
+            
             if self.elapsed >= self.total {
                 self.stopTimer()
                 self.onComplete?()
