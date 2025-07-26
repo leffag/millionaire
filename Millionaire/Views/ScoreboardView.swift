@@ -13,6 +13,8 @@ struct ScoreboardView: View {
     let onAction: () -> Void      // Для withdrawal (выдача награды)
     let onClose: () -> Void       // Для закрытия экрана
     
+    @State private var showWithdrawalAlert = false
+    
     init(session: GameSession,
          mode: GameViewModel.ScoreboardMode = .intermediate,
          onAction: @escaping () -> Void,
@@ -29,7 +31,12 @@ struct ScoreboardView: View {
             Image("Background")
                 .resizable()
                 .aspectRatio(contentMode: .fill)
-                .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+                .frame(
+                    minWidth: 0,
+                    maxWidth: .infinity,
+                    minHeight: 0,
+                    maxHeight: .infinity
+                )
                 .ignoresSafeArea(.all)
             
             // MARK: Logo
@@ -45,17 +52,14 @@ struct ScoreboardView: View {
                 HStack {
                     // Кнопка withdrawal показывается только в промежуточном режиме
                     if mode == .intermediate {
-                        Button(action: {
-                            onAction()
-                        }) {
+                        Button(action: { showWithdrawalAlert = true }) {
                             Image("IconWithdrawal")
                                 .resizable()
                                 .frame(width: 32, height: 32)
                                 .foregroundStyle(.white)
                                 .padding(8)
                         }
-                        .background(Color.white.opacity(0.15))
-                        .clipShape(Circle())
+                        
                     } else {
                         // Пустой Spacer для выравнивания
                         Color.clear
@@ -64,16 +68,12 @@ struct ScoreboardView: View {
                     
                     Spacer()
                     
-                    Button(action: {
-                        onClose()  // Закрытие экрана
-                    }) {
+                    Button(action: { onClose() }) {
                         Image(systemName: "xmark")
                             .font(.title2)
                             .foregroundStyle(.white)
                             .padding(8)
                     }
-                    .background(Color.white.opacity(0.15))
-                    .cornerRadius(20)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 40)
@@ -89,6 +89,29 @@ struct ScoreboardView: View {
                 .padding(.bottom, 50)
                 
                 Spacer()
+            }
+            
+            // MARK: Custom Alert Overlay
+            if showWithdrawalAlert {
+                Color.black.opacity(0.5)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        showWithdrawalAlert = false
+                    }
+                
+                CustomAlertView(
+                    message: "Are you sure you want to claim a prize of $\(viewModel.currentPrize) ?",
+                    onDismiss: {
+                        showWithdrawalAlert = false
+                    },
+                    showSecondButton: true,
+                    secondButtonAction: {
+                        showWithdrawalAlert = false
+                        onAction()
+                    }
+                )
+                .padding(.horizontal, 40)
+                .zIndex(2)
             }
         }
         .safeAreaInset(edge: .top) {
@@ -109,7 +132,7 @@ struct ScoreboardView: View {
             incorrectAnswers: ["B", "C", "D"]
         )
     }
-    let session = GameSession(questions: questions, currentQuestionIndex: 7, score: 15000)!
+    let session = GameSession(questions: questions, currentQuestionIndex: 10, score: 15000)!
     
     ScoreboardView(
         session: session,

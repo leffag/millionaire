@@ -13,6 +13,12 @@ final class ScoreboardViewModel: ObservableObject {
     private let prizeCalculator = PrizeCalculator()
     
     private var gameSession: GameSession
+    
+    /// Текущий приз игрока
+    var currentPrize: Int {
+        return prizeCalculator.getPrizeAmount(for: gameSession.currentQuestionIndex)
+    }
+    
     init(gameSession: GameSession) {
         self.gameSession = gameSession
         updateLevels()
@@ -26,7 +32,7 @@ final class ScoreboardViewModel: ObservableObject {
                 number: prize.questionNumber,
                 amount: prize.amount,
                 isCheckpoint: prize.isCheckpoint,
-                isCurrent: prize.questionNumber == gameSession.currentQuestionIndex+1,
+                isCurrent: prize.questionNumber == gameSession.currentQuestionIndex + 1,
                 isTop: prize.questionNumber == 15
             )
         }

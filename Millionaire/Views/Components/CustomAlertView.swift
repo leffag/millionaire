@@ -21,23 +21,48 @@ struct CustomAlertView: View {
                     .multilineTextAlignment(.center)
                     .padding(.top, 50)
                 
-                
                 Spacer()
                 
-                Button("Ok") { onDismiss() }
-                    .millionaireStyle(.primary)
-                    .frame(width: 200, height: 50)
-                    .padding(.bottom, 50)
+                VStack(spacing: 16) {
+                    if showSecondButton {
+                        // Кнопка подтверждения
+                        Button("Collect your winnings") {
+                            secondButtonAction?()
+                        }
+                        .millionaireStyle(.primary)
+                        .frame(width: 200, height: 50)
+                        
+                        // Кнопка отмены
+                        Button("Cancel") {
+                            onDismiss()
+                        }
+                        .millionaireStyle(.regular)
+                        .frame(width: 200, height: 50)
+                    } else {
+                        // Обычная кнопка "Ok"
+                        Button("Ok") { onDismiss() }
+                            .millionaireStyle(.primary)
+                            .frame(width: 200, height: 50)
+                    }
+                }
+                .padding(.bottom, 50)
             }
         }
-        
     }
 }
 
-#Preview {
-    CustomAlertView(message: "sdd", onDismiss: {})
+#Preview("Single Button") {
+    CustomAlertView(message: "This is a regular notification.", onDismiss: {})
 }
 
+#Preview("Two Buttons") {
+    CustomAlertView(
+        message: "Are you sure you want to claim a prize of 15,000 $?",
+        onDismiss: {},
+        showSecondButton: true,
+        secondButtonAction: {}
+    )
+}
 
 struct ShadowedCardView<Content: View>: View {
     // MARK: - Properties
