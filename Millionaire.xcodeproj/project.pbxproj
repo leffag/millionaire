@@ -27,7 +27,6 @@
 			membershipExceptions = (
 				Info.plist,
 				Resources/Images/Images.md,
-				SupportingFiles/README.md,
 			);
 			target = 6B323FB22E2DD05700B38734 /* Millionaire */;
 		};
