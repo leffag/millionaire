@@ -98,7 +98,7 @@ final class GameViewModel: ObservableObject {
         onSessionUpdated: @escaping (GameSession) -> Void = { _ in },
         onGameFinished: (() -> Void)? = nil,
         onNavigateToScoreboard: ((GameSession, ScoreboardMode) -> Void)? = nil,
-        audioService: IAudioService = AudioService(),
+        audioService: IAudioService = AudioService.shared,
         timerService: ITimerService = TimerService()
     ) {
         self.session = initialSession
