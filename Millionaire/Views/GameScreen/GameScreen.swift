@@ -10,6 +10,9 @@ import SwiftUI
 struct GameScreen: View {
     @ObservedObject var viewModel: GameViewModel
     
+    @State private var showCustomAlert = false
+    @State private var alertMessage = ""
+    
     //    MARK: Init
     init(viewModel: GameViewModel) {
         self.viewModel = viewModel
@@ -32,14 +35,36 @@ struct GameScreen: View {
                     .padding(.vertical, 20)
                 helpButtons()
             }
+            .blur(radius: showCustomAlert ? 5 : 0)
             .allowsHitTesting(viewModel.selectedAnswer == nil)
             .padding(20)
         }
         .onAppear {
             viewModel.startGame()
         }
+        
+        .overlay(
+            Group {
+                if showCustomAlert {
+                    CustomAlertView(message: alertMessage ) {
+                        withAnimation(.easeInOut) {
+                            showCustomAlert = false
+                        }
+                    }
+                    .frame(width: 350, height: 500)
+                    .cornerRadius(20)
+                    .transition(.asymmetric(insertion: .scale.combined(with: .opacity), removal: .opacity))
+                    .zIndex(2)
+                }
+            }
+        )
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden()
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                BackBarButtonView()
+            }
+            
             ToolbarItem(placement: .principal) {
                 navTitle()
             }
@@ -76,14 +101,12 @@ struct GameScreen: View {
         HStack {
             VStack {
                 Text("QUESTION #\(viewModel.numberQuestion)")
-                    .font(.title)
-                    .foregroundStyle(.white)
+                    .millionaireTitleStyle()
+                  
                 
                 
                 Text("$\(viewModel.priceQuestion)")
-                    .font(.title)
-                    .foregroundStyle(.white)
-                    .bold()
+                    .millionaireTitleStyle()
             }
         }
     }
@@ -92,9 +115,7 @@ struct GameScreen: View {
     private func timerView() -> some View {
         ZStack {
             Text(viewModel.duration)
-                .font(.title)
-                .foregroundStyle(.white)
-                .bold()
+                .millionaireTimerStyle(type: viewModel.timerType)
         }
     }
     
@@ -127,7 +148,6 @@ struct GameScreen: View {
     }
     
     
-    
     // MARK: - Help Buttons
     private func helpButtons() -> some View {
         HStack(spacing: 20) {
@@ -139,7 +159,13 @@ struct GameScreen: View {
             
             HelpButton(
                 type: .audience,
-                action: viewModel.audienceButtonTap
+                action: {
+                    viewModel.audienceButtonTap()
+                    alertMessage = "Аудитория выбрала: C"
+                    withAnimation {
+                        showCustomAlert = true
+                    }
+                }
             )
             .disabled(!viewModel.lifelines.contains(.audience))
             
@@ -150,6 +176,8 @@ struct GameScreen: View {
             .disabled(!viewModel.lifelines.contains(.callToFriend))
         }
     }
+    
+
     
     private func buttonState(for answer: String) -> MillionaireAnswerButtonStyle.AnswerState {
         guard let selected = viewModel.selectedAnswer else {
@@ -191,6 +219,8 @@ struct GameScreen: View {
             EmptyView()
         }
     }
+    
+    
 }
 
 // MARK: - Preview
