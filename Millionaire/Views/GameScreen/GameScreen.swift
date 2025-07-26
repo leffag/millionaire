@@ -17,188 +17,165 @@ struct GameScreen: View {
     
     // MARK: - Body
     var body: some View {
-        ZStack {
-            AnimatedGradientBackgroundView()
-            
-            VStack {
-                timerView()
-                    .padding(.top, 20)
+            ZStack {
+                AnimatedGradientBackgroundView()
                 
-                questionTextView()
-                    .padding(.top, 20)
-                    .padding(.bottom, 20)
+                VStack {
+                    timerView()
+                        .padding(.top, 20)
+                    
+                    questionTextView()
+                        .padding(.top, 20)
+                        .padding(.bottom, 20)
+                    
+                    answerButtons()
+                        .padding(.vertical, 20)
+                    helpButtons()
+                }
+                .allowsHitTesting(viewModel.selectedAnswer == nil)
+                .padding(20)
+            }
+            .onAppear {
+                viewModel.startGame()
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    navTitle()
+                }
                 
-                answerButtons()
-                    .padding(.vertical, 20)
-                helpButtons()
-            }
-            .allowsHitTesting(viewModel.selectedAnswer == nil)
-            .padding(20)
-        }
-        .onAppear {
-            viewModel.startGame()
-        }
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                navTitle()
-            }
-            
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: {
-                    //viewModel.navigationPath.append(.scoreboard(session: viewModel.currentSession,
-                    //                                            mode: .gameOver))
-                    viewModel.testScoreboard()
-                }) {
-                    Image(ImageResource.iconLevels)
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        //viewModel.navigationPath.append(.scoreboard(session: viewModel.currentSession,
+                        //                                            mode: .gameOver))
+                        viewModel.testScoreboard()
+                    }) {
+                        Image(ImageResource.iconLevels)
+                    }
                 }
             }
         }
-        //  Добавляем навигацию к скорборду
-        .fullScreenCover(
-            isPresented: .constant(viewModel.shouldShowScoreboard),
-            onDismiss: {
-                viewModel.handleScoreboardDismiss()
-            }
-        ) {
-            if let scoreboardState = viewModel.currentScoreboardState,
-               case .scoreboard(let session, let mode) = scoreboardState {
-                ScoreboardView(
-                    session: session,
-                    mode: mode,
-                    onAction: {
-                        // TODO: Логика withdrawal
-                        print("Withdrawal tapped")
-                    },
-                    onClose: {
-                        viewModel.handleScoreboardDismiss()
-                    }
-                )
+        
+        // MARK: - NavTitle
+        private func navTitle() -> some View {
+            HStack {
+                VStack {
+                    Text("QUESTION #\(viewModel.numberQuestion)")
+                        .font(.title)
+                        .foregroundStyle(.white)
+                    
+                    
+                    Text("$\(viewModel.priceQuestion)")
+                        .font(.title)
+                        .foregroundStyle(.white)
+                        .bold()
+                }
             }
         }
-    }
-    
-    
-    // MARK: - NavTitle
-    private func navTitle() -> some View {
-        HStack {
-            VStack {
-                Text("QUESTION #\(viewModel.numberQuestion)")
-                    .font(.title)
-                    .foregroundStyle(.white)
-                
-                
-                Text("$\(viewModel.priceQuestion)")
+        
+        // MARK: - Timer View
+        private func timerView() -> some View {
+            ZStack {
+                Text(viewModel.duration)
                     .font(.title)
                     .foregroundStyle(.white)
                     .bold()
             }
         }
-    }
-    
-    // MARK: - Timer View
-    private func timerView() -> some View {
-        ZStack {
-            Text(viewModel.duration)
-                .font(.title)
-                .foregroundStyle(.white)
-                .bold()
-        }
-    }
-    
-    // MARK: - Question View
-    private func questionTextView() -> some View {
-        VStack {
-            Text(viewModel.question.question)
-                .font(.headline)
-                .foregroundStyle(.white)
-                .bold()
-            Spacer()
-        }
-    }
-    
-    
-    // MARK: - Answer Buttons
-    private func answerButtons() -> some View {
-        VStack(spacing: 20) {
-            ForEach(Array(zip(AnswerLetter.allCases, viewModel.answers)), id: \.0) { letter, answer in
-                Button.millionaireAnswer(
-                    letter: letter.rawValue,
-                    text: answer,
-                    state: buttonState(for: answer)
-                ) {
-                    viewModel.onAnswer(answer)
-                }
-                .disabled(viewModel.selectedAnswer == answer)
+        
+        // MARK: - Question View
+        private func questionTextView() -> some View {
+            VStack {
+                Text(viewModel.question.question)
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .bold()
+                Spacer()
             }
         }
-    }
-    
-    
-    
-    // MARK: - Help Buttons
-    private func helpButtons() -> some View {
-        HStack(spacing: 20) {
-            HelpButton(
-                type: .fiftyFifty,
-                action: viewModel.fiftyFiftyButtonTap
-            )
-            .disabled(!viewModel.lifelines.contains(.fiftyFifty))
-            
-            HelpButton(
-                type: .audience,
-                action: viewModel.audienceButtonTap
-            )
-            .disabled(!viewModel.lifelines.contains(.audience))
-            
-            HelpButton(
-                type: .callToFriend,
-                action: viewModel.callYourFriendButtonTap
-            )
-            .disabled(!viewModel.lifelines.contains(.callToFriend))
+        
+        
+        // MARK: - Answer Buttons
+        private func answerButtons() -> some View {
+            VStack(spacing: 20) {
+                ForEach(Array(zip(AnswerLetter.allCases, viewModel.answers)), id: \.0) { letter, answer in
+                    Button.millionaireAnswer(
+                        letter: letter.rawValue,
+                        text: answer,
+                        state: buttonState(for: answer)
+                    ) {
+                        viewModel.onAnswer(answer)
+                    }
+                    .disabled(viewModel.selectedAnswer == answer)
+                }
+            }
         }
-    }
-    
-    private func buttonState(for answer: String) -> MillionaireAnswerButtonStyle.AnswerState {
-        guard let selected = viewModel.selectedAnswer else {
+        
+        
+        
+        // MARK: - Help Buttons
+        private func helpButtons() -> some View {
+            HStack(spacing: 20) {
+                HelpButton(
+                    type: .fiftyFifty,
+                    action: viewModel.fiftyFiftyButtonTap
+                )
+                .disabled(!viewModel.lifelines.contains(.fiftyFifty))
+                
+                HelpButton(
+                    type: .audience,
+                    action: viewModel.audienceButtonTap
+                )
+                .disabled(!viewModel.lifelines.contains(.audience))
+                
+                HelpButton(
+                    type: .callToFriend,
+                    action: viewModel.callYourFriendButtonTap
+                )
+                .disabled(!viewModel.lifelines.contains(.callToFriend))
+            }
+        }
+        
+        private func buttonState(for answer: String) -> MillionaireAnswerButtonStyle.AnswerState {
+            guard let selected = viewModel.selectedAnswer else {
+                return .regular
+            }
+            
+            // Подсвечиваем выбранную кнопку
+            if selected == answer {
+                switch viewModel.answerResultState {
+                case .correct:
+                    return .correct
+                case .incorrect:
+                    return .wrong
+                case .none:
+                    return .regular
+                }
+            }
+            
+            // Если выбран неправильный ответ, но это — правильный
+            if viewModel.answerResultState == .incorrect,
+               answer == viewModel.correctAnswer {
+                return .correct
+            }
+            
             return .regular
         }
         
-        // Подсвечиваем выбранную кнопку
-        if selected == answer {
-            switch viewModel.answerResultState {
-            case .correct:
-                return .correct
-            case .incorrect:
-                return .wrong
-            case .none:
-                return .regular
-            }
-        }
-        
-        // Если выбран неправильный ответ, но это — правильный
-        if viewModel.answerResultState == .incorrect,
-           answer == viewModel.correctAnswer {
-            return .correct
-        }
-        
-        return .regular
     }
-
-}
-
-// MARK: - Preview
-#Preview {
-    NavigationStack {
-        GameScreen(
-            viewModel: GameViewModel(
-                initialSession: GameSession(
-                    questions: Array(
-                        repeating: Question(difficulty: .easy, category: "aaa", question: "Как дела?", correctAnswer: "Хорошо", incorrectAnswers: Array(repeating: "Плохо", count: 3)),
-                        count: 15
-                    )
-                )!
+    
+    // MARK: - Preview
+    #Preview {
+        NavigationStack {
+            GameScreen(
+                viewModel: GameViewModel(
+                    initialSession: GameSession(
+                        questions: Array(
+                            repeating: Question(difficulty: .easy, category: "aaa", question: "Как дела?", correctAnswer: "Хорошо", incorrectAnswers: Array(repeating: "Плохо", count: 3)),
+                            count: 15
+                        )
+                    )!
+                )
             )
-        )
+        }
     }
-}

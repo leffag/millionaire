@@ -202,7 +202,21 @@ struct HomeView: View {
             GameScreen(
                 viewModel: viewModel.createGameViewModel(for: session)
             )
+        case .scoreboard(let session, let mode):
+            ScoreboardView(
+                session: session,
+                mode: mode,
+                onAction: {
+                    // TODO: Логика withdrawal
+                    print(" Withdrawal tapped")
+                },
+                onClose: {
+                    // Возвращаемся назад - убираем скорборд из навигации
+                    viewModel.navigationPath.removeLast()
+                }
+            )
         }
+        
     }
     
 }
