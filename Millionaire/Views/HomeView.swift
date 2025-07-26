@@ -41,18 +41,23 @@ enum GameType {
 typealias ButtonVariant = MillionaireButtonStyle.Variant
 
 struct HomeView: View {
-    
+    @StateObject private var navigationCoordinator = NavigationCoordinator()
     @StateObject private var viewModel: HomeViewModel
     @State private var showRules = false
     
-    @EnvironmentObject var gameManager: GameManager
+    //@EnvironmentObject var gameManager: GameManager
     
     init(gameManager: GameManager) {
-        self._viewModel = StateObject(wrappedValue: HomeViewModel(gameManager: gameManager))
+        let coordinator = NavigationCoordinator()
+               self._navigationCoordinator = StateObject(wrappedValue: coordinator)
+               self._viewModel = StateObject(wrappedValue: HomeViewModel(
+                   gameManager: gameManager,
+                   navigationCoordinator: coordinator
+               ))
     }
     
     var body: some View {
-        NavigationStack(path: $viewModel.navigationPath) {
+        NavigationStack(path: $navigationCoordinator.path) {
             ZStack {
                 backgroundImage
                 
@@ -83,11 +88,12 @@ struct HomeView: View {
             } message: {
                 Text(viewModel.errorMessage)
             }
-            .navigationDestination(for: HomeViewModel.NavigationRoute.self) { route in
-                destinationView(for: route)
+            .navigationDestination(for: NavigationRoute.self) { route in
+                // Делегируем создание View координатору
+                navigationCoordinator.destinationView(for: route)
             }
         }
-        .onChange(of: viewModel.navigationPath) { newPath in
+        .onChange(of: navigationCoordinator.path) { newPath in
             viewModel.onNavigationChange(newPath)
         }
     }
@@ -190,66 +196,6 @@ struct HomeView: View {
                     .foregroundColor(.white)
             }
         }
-    }
-    
-    @ViewBuilder
-    private func destinationView(for route: HomeViewModel.NavigationRoute) -> some View {
-        switch route {
-            
-        case .loading:
-            LoadingView()
-            
-        case .game(let session):
-            GameScreen(
-                viewModel: viewModel.createGameViewModel(for: session)
-            )
-            
-        case .scoreboard(let session, let mode):
-            ScoreboardView(
-                session: session,
-                mode: mode,
-                onAction: {
-                    print(" Withdrawal tapped")
-                    // Логика withdrawal - забрать деньги и завершить игру
-                    viewModel.withdrawAndEndGame()
-                },
-                onClose: {
-//                    Логика переходов от ScoreboardView:
-//                    .intermediate → возврат к игре
-//                    .gameOver/.victory → переход к GameOverView
-                    
-                    // Возвращаемся назад - убираем скорборд из навигации
-                    switch mode {
-                    case .intermediate:
-                        // В промежуточном режиме - возвращаемся к игре
-                        viewModel.navigationPath.removeLast()
-                    case .gameOver, .victory:
-                        // При окончании игры - переходим к GameOverView
-                        viewModel.navigationPath.removeLast() // Убираем scoreboard
-                        viewModel.navigationPath.append(.gameOver(session, mode))
-                    }
-                }
-            )
-            
-        case .gameOver(let session, let mode):
-//            Обработка действий из GameOverView:
-//            "New Game" → очистка навигации и запуск новой игры
-//            "Main Screen" → очистка навигации и возврат на главный
-            GameOverView(
-                session: session,
-                mode: mode,
-                onNewGame: {
-                    // Очищаем навигацию и начинаем новую игру
-                    viewModel.navigationPath.removeAll()
-                    viewModel.startNewGame()
-                },
-                onMainScreen: {
-                    // Возвращаемся на главный экран
-                    viewModel.navigationPath.removeAll()
-                }
-            )
-        }
-        
     }
     
 }
