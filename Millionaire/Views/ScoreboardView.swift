@@ -10,92 +10,133 @@ import SwiftUI
 struct ScoreboardView: View {
     @ObservedObject var viewModel: ScoreboardViewModel
     let mode: GameViewModel.ScoreboardMode
-    let onAction: () -> Void      // Для withdrawal (выдача награды)
-    let onClose: () -> Void       // Для закрытия экрана
+    let onAction: () -> Void
+    let onClose: () -> Void
+    
+    @State private var showWithdrawalAlert = false
+    @State private var showGameOverZeroAlert = false
+    
     
     init(session: GameSession,
          mode: GameViewModel.ScoreboardMode = .intermediate,
          onAction: @escaping () -> Void,
          onClose: @escaping () -> Void) {
         self.viewModel = ScoreboardViewModel(gameSession: session)
-        self.mode = .intermediate
+        self.mode = mode
         self.onAction = onAction
         self.onClose = onClose
     }
     
     var body: some View {
         ZStack {
-            // MARK: Background
+            // Background
             Image("Background")
                 .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
-                .ignoresSafeArea(.all)
-            
-            // MARK: Logo
-            Image("ScoreboardScreenLogo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 85, height: 85)
-                .offset(y: -300)
-                .zIndex(1)
+                .scaledToFill()
+                .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // MARK: Top bar
-                HStack {
-                    // Кнопка withdrawal показывается только в промежуточном режиме
-                    if mode == .intermediate {
-                        Button(action: {
-                            onAction()
-                        }) {
-                            Image("IconWithdrawal")
-                                .resizable()
-                                .frame(width: 32, height: 32)
-                                .foregroundStyle(.white)
-                                .padding(8)
+                        // Логотип
+                        Image("ScoreboardScreenLogo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 85, height: 85)
+                            
+                            .padding(.top, 40)
+
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 4) {
+                        // Таблица уровней
+                        ForEach(viewModel.levels) { level in
+                            ScoreboardRowView(level: level)
                         }
-                        .background(Color.white.opacity(0.15))
-                        .clipShape(Circle())
-                    } else {
-                        // Пустой Spacer для выравнивания
-                        Color.clear
-                            .frame(width: 48, height: 48)
                     }
+                    .padding(.horizontal, 30)
+                    .padding(.top, 16)
+                    .padding(.bottom, 50)
                     
                     Spacer()
-                    
-                    Button(action: {
-                        onClose()  // Закрытие экрана
-                    }) {
-                        Image(systemName: "xmark")
-                            .font(.title2)
-                            .foregroundStyle(.white)
-                            .padding(8)
-                    }
-                    .background(Color.white.opacity(0.15))
-                    .cornerRadius(20)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 40)
-                
-                // MARK: Scoreboard
-                VStack(spacing: 0) {
-                    ForEach(viewModel.levels) { level in
-                        ScoreboardRowView(level: level)
+            }
+            .blur(radius: showWithdrawalAlert ? 5 : 0)
+            
+            // Alert Overlay
+            if showWithdrawalAlert {
+                Color.black.opacity(0.5)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        showWithdrawalAlert = false
+                    }
+
+                CustomAlertView(
+                    message: "Are you sure you want to claim a prize of $\(viewModel.currentPrize)?",
+                    onDismiss: {
+                        showWithdrawalAlert = false
+                    },
+                    showSecondButton: true,
+                    secondButtonAction: {
+                        showWithdrawalAlert = false
+                        onAction()
+                    }
+                )
+                .frame(width: 300, height: 400)
+                .cornerRadius(20)
+                .zIndex(2)
+            }
+            if showGameOverZeroAlert {
+                            Color.black.opacity(0.5)
+                                .ignoresSafeArea()
+
+                            CustomAlertView(
+                                message: "You lost. Your prize is $0.",
+                                onDismiss: {
+                                    showGameOverZeroAlert = false
+                                    onClose()
+                                },
+                                showSecondButton: false
+                            )
+                            .frame(width: 280, height: 300)
+                            .cornerRadius(20)
+                            .zIndex(3)
+                        }
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden()
+        .onAppear {
+                    viewModel.playSound(mode: mode)
+
+                    if mode == .gameOver && viewModel.currentPrize == 0 {
+                        Task {
+                            try await Task.sleep(for: .seconds(2))
+                            withAnimation {
+                                showGameOverZeroAlert = true
+                            }
+                        }
                     }
                 }
-                .padding(.horizontal, 30)
-                .padding(.top, 40)
-                .padding(.bottom, 50)
-                
-                Spacer()
+        
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                if mode == .intermediate {
+                    Button(action: { showWithdrawalAlert = true }) {
+                        Image("IconWithdrawal")
+                            .resizable()
+                            .frame(width: 28, height: 28)
+                    }
+                }
+            }
+
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    viewModel.deinitAudioService()
+                    onClose()
+                }) {
+                    Image(systemName: "xmark")
+                        .font(.title2)
+                        .foregroundStyle(.white)
+                }
             }
         }
-        .safeAreaInset(edge: .top) {
-            // Добавляем прозрачную область для безопасной зоны
-            Color.clear.frame(height: 0)
-        }
-        .navigationBarHidden(true) // Скрываем навигационную панель
     }
 }
 
@@ -109,7 +150,7 @@ struct ScoreboardView: View {
             incorrectAnswers: ["B", "C", "D"]
         )
     }
-    let session = GameSession(questions: questions, currentQuestionIndex: 7, score: 15000)!
+    let session = GameSession(questions: questions, currentQuestionIndex: 10, score: 15000)!
     
     ScoreboardView(
         session: session,
