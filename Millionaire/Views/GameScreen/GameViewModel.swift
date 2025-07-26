@@ -6,16 +6,11 @@
 //
 
 import Foundation
+import SwiftUI
 import Combine
 
 // MARK: - Navigation States
 extension GameViewModel {
-    enum GameNavigationState: Hashable, Equatable {
-        case playing
-        case showingResult
-        case scoreboard(session: GameSession, mode: ScoreboardMode)
-    }
-    
     enum ScoreboardMode: Hashable, Equatable {
         case intermediate
         case victory
@@ -38,7 +33,10 @@ final class GameViewModel: ObservableObject {
     private let onSessionUpdated: (GameSession) -> Void
     
     /// Обработчик завершения игры (возврат на главный экран)
-     private let onGameFinished: (() -> Void)?
+    private let onGameFinished: (() -> Void)?
+    
+    /// Обработчик перехода к скорборду
+    private let onNavigateToScoreboard: ((GameSession, ScoreboardMode) -> Void)?
     
     @Published private var session: GameSession {
         didSet {
@@ -67,16 +65,6 @@ final class GameViewModel: ObservableObject {
     @Published var selectedAnswer: String?
     @Published var answerResultState: AnswerResult?
     
-    @Published var shouldShowGameOver = false
-    @Published var shouldShowVictory = false
-
-    @Published var navigationPath: [GameNavigationState] = [] {
-        didSet {
-            print("📍 NavigationPath changed: \(navigationPath)")
-            print("🔍 shouldShowScoreboard: \(shouldShowScoreboard)")
-        }
-    }
-    
     // Храним текущую задачу для возможности отмены
     private var answerProcessingTask: Task<Void, Never>?
     
@@ -103,6 +91,7 @@ final class GameViewModel: ObservableObject {
         initialSession: GameSession,
         onSessionUpdated: @escaping (GameSession) -> Void = { _ in },
         onGameFinished: (() -> Void)? = nil,
+        onNavigateToScoreboard: ((GameSession, ScoreboardMode) -> Void)? = nil,
         audioService: IAudioService = AudioService(),
         timerService: ITimerService = TimerService()
     ) {
@@ -111,6 +100,7 @@ final class GameViewModel: ObservableObject {
         self.audioService = audioService
         self.timerService = timerService
         self.onGameFinished = onGameFinished
+        self.onNavigateToScoreboard = onNavigateToScoreboard
         
         answers = initialSession.currentQuestion.allAnswers.shuffled()
         
@@ -161,14 +151,10 @@ final class GameViewModel: ObservableObject {
     
     // MARK: - Answer Tap
     func onAnswer(_ answer: String) {
-        // Предотвращаем множественные нажатия
-//           guard !isProcessingAnswer else { return }
+        // Отменяем предыдущую задачу, если она есть
+        answerProcessingTask?.cancel() // Если пользователь быстро нажал другой ответ
         
-            // Отменяем предыдущую задачу, если она есть
-            answerProcessingTask?.cancel() // Если пользователь быстро нажал другой ответ
-
-       
-//        обновляем значение выделленного ответа
+        // обновляем значение выделленного ответа
         selectedAnswer = answer
         
         // Запускаем новую
@@ -180,7 +166,7 @@ final class GameViewModel: ObservableObject {
     @MainActor
     private func processAnswerWithDelay(answer: String) async {
         
-        //   Cтавим на паузу таймер
+        // Cтавим на паузу таймер
         timerService.pauseTimer()
         
         // Играем звук интриги
@@ -214,7 +200,7 @@ final class GameViewModel: ObservableObject {
         guard let answerResult = newSession.answer(answer: answer) else {
             return
         }
-
+        
         // Начисляем призы исподбзуя PrizeCalculator
         switch answerResult {
         case .correct:
@@ -224,10 +210,10 @@ final class GameViewModel: ObservableObject {
             let checkpoint = prizeCalculator.getCheckpointPrizeAmount(before: session.currentQuestionIndex)
             newSession.setScore(checkpoint)
         }
-
+        
         // Обновляем сессию
         //session = newSession
-
+        
         // Звук
         switch answerResult {
         case .correct:
@@ -237,22 +223,24 @@ final class GameViewModel: ObservableObject {
             answerResultState = .incorrect
             audioService.playWrongAnswerSfx()
         }
-
+        
         // Ждём анимации результата
         do {
             try await Task.sleep(for: .seconds(2))
             try Task.checkCancellation()
-
+            
             if answerResult == .correct && !session.isFinished {
                 // Подготовка следующего вопроса
                 selectedAnswer = nil  // <-- переносим сюда
+                answerResultState = nil
+                correctAnswer = nil
                 answers = session.currentQuestion.allAnswers.shuffled()
                 startGame()
             } else {
                 // Игра окончена
                 checkGameEnd()
             }
-
+            
         } catch {
             // Отменено
             audioService.stop()
@@ -260,24 +248,23 @@ final class GameViewModel: ObservableObject {
     }
     
     private func checkGameEnd() {
-        let targetState: GameNavigationState
+        let mode: ScoreboardMode
         
         if session.isFinished {
             if session.currentQuestionIndex == 14 {
                 print(" ПОБЕДА! Выигран миллион!")
-                targetState = .scoreboard(session: session, mode: .victory)
+                mode = .victory
             } else {
                 print(" Игра окончена на вопросе \(session.currentQuestionIndex + 1)")
                 print(" Выигрыш: \(session.score) ")
-                targetState = .scoreboard(session: session, mode: .gameOver)
+                mode = .gameOver
             }
         } else {
-            targetState = .scoreboard(session: session, mode: .intermediate)
+            mode = .intermediate
         }
         
-        print("🚀 Adding to navigationPath: \(targetState)")
-        navigationPath.append(targetState)
-        print("📍 NavigationPath after append: \(navigationPath)")
+        // Делегируем навигацию родительскому компоненту
+        onNavigateToScoreboard?(session, mode)
     }
     
     // MARK: - Help Button Actions
@@ -309,48 +296,8 @@ final class GameViewModel: ObservableObject {
         // TODO: Реализация подсказки
     }
     
-    func handleScoreboardDismiss() {
-        // Очищаем путь навигации
-        navigationPath.removeAll()
-        
-        // Сбрасываем состояние UI
-        selectedAnswer = nil
-        correctAnswer = nil
-        answerResultState = nil
-        
-        if !session.isFinished {
-            // Если игра продолжается, подготавливаем следующий вопрос
-            answers = session.currentQuestion.allAnswers.shuffled()
-            startGame()
-        } else {
-            // Если игра закончена, возвращаемся на главный экран
-            // Этот callback можно передать из HomeViewModel
-            onGameFinished?()
-        }
-    }
-
-    
-    var shouldShowScoreboard: Bool {
-        !navigationPath.isEmpty && navigationPath.contains { state in
-            if case .scoreboard = state { return true }
-            return false
-        }
-    }
-
-    var currentScoreboardState: GameNavigationState? {
-        navigationPath.first { state in
-            if case .scoreboard = state { return true }
-            return false
-        }
-    }
-
-    func dismissScoreboard() {
-        navigationPath.removeAll()
-        handleScoreboardDismiss()
-    }
-    
     func testScoreboard() {
-        navigationPath.append(.scoreboard(session: session, mode: .gameOver))
+        onNavigateToScoreboard?(session, .intermediate)
     }
 }
 

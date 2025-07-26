@@ -41,18 +41,23 @@ enum GameType {
 typealias ButtonVariant = MillionaireButtonStyle.Variant
 
 struct HomeView: View {
-    
+    @StateObject private var navigationCoordinator = NavigationCoordinator()
     @StateObject private var viewModel: HomeViewModel
     @State private var showRules = false
     
-    @EnvironmentObject var gameManager: GameManager
+    //@EnvironmentObject var gameManager: GameManager
     
     init(gameManager: GameManager) {
-        self._viewModel = StateObject(wrappedValue: HomeViewModel(gameManager: gameManager))
+        let coordinator = NavigationCoordinator()
+               self._navigationCoordinator = StateObject(wrappedValue: coordinator)
+               self._viewModel = StateObject(wrappedValue: HomeViewModel(
+                   gameManager: gameManager,
+                   navigationCoordinator: coordinator
+               ))
     }
     
     var body: some View {
-        NavigationStack(path: $viewModel.navigationPath) {
+        NavigationStack(path: $navigationCoordinator.path) {
             ZStack {
                 backgroundImage
                 
@@ -83,11 +88,12 @@ struct HomeView: View {
             } message: {
                 Text(viewModel.errorMessage)
             }
-            .navigationDestination(for: HomeViewModel.NavigationRoute.self) { route in
-                destinationView(for: route)
+            .navigationDestination(for: NavigationRoute.self) { route in
+                // Делегируем создание View координатору
+                navigationCoordinator.destinationView(for: route)
             }
         }
-        .onChange(of: viewModel.navigationPath) { newPath in
+        .onChange(of: navigationCoordinator.path) { newPath in
             viewModel.onNavigationChange(newPath)
         }
     }
@@ -122,7 +128,7 @@ struct HomeView: View {
     @ViewBuilder
     private var logoAndScoreSection: some View {
         VStack() {
-            Image("HomeScreenLogo")
+            Image(.homeScreenLogo)
                 .frame(width: 311, height: 287)
             // Лучший счет
             if viewModel.viewMode != .firstStart {
@@ -192,40 +198,6 @@ struct HomeView: View {
         }
     }
     
-    @ViewBuilder
-    private func destinationView(for route: HomeViewModel.NavigationRoute) -> some View {
-        switch route {
-        case .loading:
-            LoadingView()
-            
-        case .game(let session):
-            GameScreen(
-                viewModel: viewModel.createGameViewModel(for: session)
-            )
-        }
-    }
-    
-}
-
-struct LoadingView: View {
-    var body: some View {
-        ZStack {
-            Image("Background")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .ignoresSafeArea()
-            
-            VStack(spacing: 20) {
-                ProgressView()
-                    .scaleEffect(1.5)
-                    .tint(.white)
-                
-                Text("Загрузка вопросов...")
-                    .font(.headline)
-                    .foregroundColor(.white)
-            }
-        }
-    }
 }
 
 // MARK: - Preview

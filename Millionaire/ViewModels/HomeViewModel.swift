@@ -13,13 +13,13 @@ final class HomeViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published var viewMode: HomeViewMode = .firstStart
     @Published var bestScore: Int = 0
-    @Published var navigationPath: [NavigationRoute] = []
     @Published var isLoading: Bool = false
     @Published var showError: Bool = false
     @Published var errorMessage: String = ""
     
     // MARK: - Dependencies
     private var gameManager: GameManager
+    private let navigationCoordinator: NavigationCoordinator
     
     // MARK: - Computed Properties
     var hasActiveGame: Bool {
@@ -27,9 +27,14 @@ final class HomeViewModel: ObservableObject {
     }
     
     // MARK: - Init
-    init(gameManager: GameManager) {
+    init(gameManager: GameManager,
+         navigationCoordinator: NavigationCoordinator) {
         self.gameManager = gameManager
+        self.navigationCoordinator = navigationCoordinator
         updateViewState()
+        
+        // Устанавливаем связь с координатором
+        navigationCoordinator.setup(gameManager: gameManager, homeViewModel: self)
     }
     
     func onNavigationChange(_ path: [NavigationRoute]) {
@@ -49,6 +54,17 @@ final class HomeViewModel: ObservableObject {
         Task {
             await startGame(type: .continued)
         }
+    }
+    
+    // MARK: - Withdrawal
+    func withdrawAndEndGame() {
+        // Завершаем текущую сессию с текущим счетом
+        if let session = gameManager.currentSession {
+            gameManager.endGame(withScore: session.score)
+        }
+        
+        // Возвращаемся на главный экран через координатор
+         navigationCoordinator.popToRoot()
     }
     
     // MARK: - Private Methods
@@ -74,7 +90,7 @@ final class HomeViewModel: ObservableObject {
     private func startNewGameFlow() async {
         
         // Показываем загрузку
-        navigationPath = [.loading]
+        navigationCoordinator.showLoading()
         isLoading = true
         
         do {
@@ -84,10 +100,10 @@ final class HomeViewModel: ObservableObject {
             try? await Task.sleep(nanoseconds: 500_000_000)
             
             // Переходим к игре
-            navigationPath = [.game(session)]
+            navigationCoordinator.showGame(session)
         } catch {
             // Обработка ошибки
-            navigationPath = []
+            navigationCoordinator.popToRoot()
             errorMessage = "Не удалось загрузить вопросы. Проверьте интернет-соединение."
             showError = true
         }
@@ -102,28 +118,49 @@ final class HomeViewModel: ObservableObject {
             return
         }
         
-        navigationPath = [.game(session)]
+        navigationCoordinator.showGame(session)
     }
     
-    // MARK: - Game Session Updates
-    func createGameViewModel(for session: GameSession) -> GameViewModel {
-        GameViewModel(
-            initialSession: session,
-            onSessionUpdated: { [weak self] updatedSession in
-                self?.gameManager.updateSession(updatedSession)
-            },
-            onGameFinished: { [weak self] in
-                // Возвращаемся на главный экран
-                self?.navigationPath.removeAll()
-            }
-        )
-    }
+//    // MARK: - Game Session Updates
+//    func createGameViewModel(for session: GameSession) -> GameViewModel {
+//            GameViewModel(
+//                initialSession: session,
+//                onSessionUpdated: { [weak self] updatedSession in
+//                    self?.gameManager.updateSession(updatedSession)
+//                },
+//                onGameFinished: { [weak self] in
+//                    // Возвращаемся на главный экран
+//                    self?.navigationPath.removeAll()
+//                },
+//                // GameViewModel не управляет навигацией
+//                // Вместо этого уведомляет родительский компонент
+//                onNavigateToScoreboard: { [weak self] session, mode in
+//                    // Добавляем скорборд в навигацию
+//                    self?.navigationPath.append(.scoreboard(session, mode))
+//                }
+//            )
+//        }
 }
 
-// MARK: - Navigation Routes
-extension HomeViewModel {
-    enum NavigationRoute: Hashable {
-        case loading
-        case game(GameSession)
-    }
-}
+//
+// Поток навигации:
+//
+//HomeView
+//    ├── LoadingView
+//    ├── GameScreen
+//    │   └── ScoreboardView (через toolbar button)
+//    │       ├── [intermediate] → назад к GameScreen
+//    │       └── [gameOver/victory] → GameOverView
+//    └── GameOverView
+//        ├── New Game → HomeView → LoadingView → GameScreen
+//        └── Main Screen → HomeView
+
+//// MARK: - Navigation Routes
+//extension HomeViewModel {
+//    enum NavigationRoute: Hashable {
+//        case loading
+//        case game(GameSession)
+//        case scoreboard(GameSession, GameViewModel.ScoreboardMode)
+//        case gameOver(GameSession, GameViewModel.ScoreboardMode)
+//    }
+//}
