@@ -9,51 +9,71 @@ import SwiftUI
 
 struct ScoreboardView: View {
     @ObservedObject var viewModel: ScoreboardViewModel
-    let onAction: () -> Void
+    let mode: GameViewModel.ScoreboardMode
+    let onAction: () -> Void      // Для withdrawal (выдача награды)
+    let onClose: () -> Void       // Для закрытия экрана
     
-    init(session: GameSession, mode: GameViewModel.ScoreboardMode, onAction: @escaping () -> Void) {
+    init(session: GameSession,
+         mode: GameViewModel.ScoreboardMode = .intermediate,
+         onAction: @escaping () -> Void,
+         onClose: @escaping () -> Void) {
         self.viewModel = ScoreboardViewModel(gameSession: session)
+        self.mode = .intermediate
         self.onAction = onAction
+        self.onClose = onClose
     }
     
     var body: some View {
         ZStack {
             // MARK: Background
-            LinearGradient(
-                colors: [
-                    Color(red: 0.13, green: 0.36, blue: 0.75),
-                    Color.black
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            Image("Background")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+                .ignoresSafeArea(.all)
             
             // MARK: Logo
-            Image("Logo")
+            Image("ScoreboardScreenLogo")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 200, height: 200)
+                .frame(width: 85, height: 85)
                 .offset(y: -300)
                 .zIndex(1)
             
             VStack(spacing: 0) {
                 // MARK: Top bar
                 HStack {
+                    // Кнопка withdrawal показывается только в промежуточном режиме
+                    if mode == .intermediate {
+                        Button(action: {
+                            onAction()
+                        }) {
+                            Image("IconWithdrawal")
+                                .resizable()
+                                .frame(width: 32, height: 32)
+                                .foregroundStyle(.white)
+                                .padding(8)
+                        }
+                        .background(Color.white.opacity(0.15))
+                        .clipShape(Circle())
+                    }
+                    
+                    Spacer()
+                    
                     Button(action: {
-                        onAction() 
+                        onClose()  // Закрытие экрана
                     }) {
-                        Image("IconWithdrawal")
-                            .resizable()
-                            .frame(width: 32, height: 32)
+                        Image(systemName: "xmark")
+                            .font(.title2)
                             .foregroundStyle(.white)
                             .padding(8)
                     }
                     .background(Color.white.opacity(0.15))
-                    .clipShape(Circle())
-                    .padding(.leading, 16)
-                    Spacer()
+                    .cornerRadius(20)
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 40)
+                
                 // MARK: Scoreboard
                 VStack(spacing: 0) {
                     ForEach(viewModel.levels) { level in
@@ -61,11 +81,17 @@ struct ScoreboardView: View {
                     }
                 }
                 .padding(.horizontal, 30)
-                .padding(.top, 100)
+                .padding(.top, 40)
                 .padding(.bottom, 50)
+                
                 Spacer()
             }
         }
+        .safeAreaInset(edge: .top) {
+            // Добавляем прозрачную область для безопасной зоны
+            Color.clear.frame(height: 0)
+        }
+        .navigationBarHidden(true) // Скрываем навигационную панель
     }
 }
 
@@ -80,70 +106,15 @@ struct ScoreboardView: View {
         )
     }
     let session = GameSession(questions: questions, currentQuestionIndex: 0, score: 0)!
+    
     ScoreboardView(
-            session: session,
-            mode: .intermediate  // или .victory, .gameOver
-        ) {
-            print("Scoreboard dismissed")  // Заглушка для preview
+        session: session,
+        mode: .intermediate,
+        onAction: {
+            print("Withdrawal action")
+        },
+        onClose: {
+            print("Close action")
         }
-}
-
-#Preview("Intermediate") {
-    let questions = (1...15).map { i in
-        Question(
-            difficulty: .easy,
-            category: "Общие знания",
-            question: "Вопрос \(i)?",
-            correctAnswer: "A",
-            incorrectAnswers: ["B", "C", "D"]
-        )
-    }
-    let session = GameSession(questions: questions, currentQuestionIndex: 5, score: 1000)!
-    
-    ScoreboardView(
-        session: session,
-        mode: .intermediate
-    ) {
-        print("Continue game")
-    }
-}
-
-#Preview("Victory") {
-    let questions = (1...15).map { i in
-        Question(
-            difficulty: .easy,
-            category: "Общие знания",
-            question: "Вопрос \(i)?",
-            correctAnswer: "A",
-            incorrectAnswers: ["B", "C", "D"]
-        )
-    }
-    let session = GameSession(questions: questions, currentQuestionIndex: 14, score: 1000000)!
-    
-    ScoreboardView(
-        session: session,
-        mode: .victory
-    ) {
-        print("Victory!")
-    }
-}
-
-#Preview("Game Over") {
-    let questions = (1...15).map { i in
-        Question(
-            difficulty: .easy,
-            category: "Общие знания",
-            question: "Вопрос \(i)?",
-            correctAnswer: "A",
-            incorrectAnswers: ["B", "C", "D"]
-        )
-    }
-    let session = GameSession(questions: questions, currentQuestionIndex: 8, score: 16000)!
-    
-    ScoreboardView(
-        session: session,
-        mode: .gameOver
-    ) {
-        print("Game over")
-    }
+    )
 }
