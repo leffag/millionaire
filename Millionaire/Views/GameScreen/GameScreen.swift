@@ -10,9 +10,6 @@ import SwiftUI
 struct GameScreen: View {
     @ObservedObject var viewModel: GameViewModel
     
-    @State private var showCustomAlert = false
-    @State private var alertMessage = ""
-    
     //    MARK: Init
     init(viewModel: GameViewModel) {
         self.viewModel = viewModel
@@ -85,16 +82,6 @@ struct GameScreen: View {
                     .bold()
             }
         }
-
-        // Подсвечиваем выбранную кнопку
-        if selected == answer {
-            switch viewModel.answerResultState {
-            case .correct:
-                return .correct
-            case .incorrect:
-                return .wrong
-            case .none:
-                return .regular
         
         // MARK: - Question View
         private func questionTextView() -> some View {
@@ -106,11 +93,6 @@ struct GameScreen: View {
                 Spacer()
             }
         }
-
-        // Если выбран неправильный ответ, но это — правильный
-        if viewModel.answerResultState == .incorrect,
-           answer == viewModel.correctAnswer {
-            return .correct
         
         
         // MARK: - Answer Buttons
@@ -128,8 +110,6 @@ struct GameScreen: View {
                 }
             }
         }
-
-        return .regular
         
         
         
