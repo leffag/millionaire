@@ -19,7 +19,7 @@ struct LoadingView: View {
                     .scaleEffect(1.5)
                     .tint(.white)
                 
-                Text("Загрузка вопросов...")
+                Text("Getting ready...")
                     .font(.headline)
                     .foregroundColor(.white)
             }

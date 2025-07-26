@@ -88,9 +88,7 @@ struct GameScreen: View {
         HStack {
             VStack {
                 Text("QUESTION #\(viewModel.numberQuestion)")
-                    .millionaireTitleStyle()
-                
-                
+                    .fontWeight(.ultraLight)
                 
                 Text("$\(viewModel.priceQuestion)")
                     .millionaireTitleStyle()
@@ -100,12 +98,12 @@ struct GameScreen: View {
     
     // MARK: - Timer View
     private func timerView() -> some View {
-        ZStack {
-            Text(viewModel.duration)
-                .millionaireTimerStyle(type: viewModel.timerType)
-        }
+        TimerView(
+            timerType: viewModel.timerType,
+            duration: viewModel.duration
+        )
+        .frame(width: 150, height: 80)
     }
-    
     
     // MARK: - Question View
     private func questionTextView() -> some View {
@@ -130,7 +128,10 @@ struct GameScreen: View {
                 ) {
                     viewModel.onAnswer(answer)
                 }
-                .disabled(viewModel.selectedAnswer == answer)
+                .disabled(
+                    viewModel.selectedAnswer == answer ||
+                    viewModel.disabledAnswers.contains(answer)
+                )
             }
         }
     }

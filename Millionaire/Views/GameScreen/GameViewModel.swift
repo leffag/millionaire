@@ -71,6 +71,12 @@ final class GameViewModel: ObservableObject {
     // Важно: отменять задачу при деинициализации
     deinit {
         answerProcessingTask?.cancel()
+        
+        // Когда GameViewModel уничтожается, все его свойства тоже
+        //Если при возврате назад нет этих сообщений - есть утечка!
+#if DEBUG
+        print(" GameViewModel деинициализирован")
+#endif
     }
     
     var question: Question { session.currentQuestion }
@@ -212,7 +218,7 @@ final class GameViewModel: ObservableObject {
         }
         
         // Обновляем сессию
-        //session = newSession
+        session = newSession
         
         // Звук
         switch answerResult {
@@ -270,11 +276,13 @@ final class GameViewModel: ObservableObject {
     // MARK: - Help Button Actions
     func fiftyFiftyButtonTap() {
         guard let result = session.useFiftyFiftyLifeline() else {
-            // Подсказка недоступна, не делаем ничего
             return
         }
-        
-        // Помечаем полученные от подсказки ответы как недоступные к выбору
+
+        // Обновляем сессию
+        session = session // Триггерим onSessionUpdated
+
+        // Помечаем недоступные ответы
         disabledAnswers = result.disabledAnswers
     }
     
@@ -297,6 +305,7 @@ final class GameViewModel: ObservableObject {
     }
     
     func testScoreboard() {
+        stopGameResources()
         onNavigateToScoreboard?(session, .intermediate)
     }
 }
