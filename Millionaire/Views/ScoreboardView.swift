@@ -114,6 +114,7 @@ struct ScoreboardView: View {
                         }
                     }
                 }
+        
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 if mode == .intermediate {
@@ -126,7 +127,10 @@ struct ScoreboardView: View {
             }
 
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: { onClose() }) {
+                Button(action: {
+                    viewModel.deinitAudioService()
+                    onClose()
+                }) {
                     Image(systemName: "xmark")
                         .font(.title2)
                         .foregroundStyle(.white)

@@ -224,10 +224,8 @@ final class GameViewModel: ObservableObject {
         switch answerResult {
         case .correct:
             answerResultState = .correct
-            audioService.playCorrectAnswerSfx()
         case .incorrect:
             answerResultState = .incorrect
-            audioService.playWrongAnswerSfx()
         }
         
         // Ждём анимации результата

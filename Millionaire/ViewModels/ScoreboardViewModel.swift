@@ -51,4 +51,8 @@ final class ScoreboardViewModel: ObservableObject {
             audioService.playWrongAnswerSfx()
         }
     }
+    
+    func deinitAudioService() {
+        audioService.stop()
+    }
 }
