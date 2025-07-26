@@ -93,11 +93,11 @@ extension Text {
     }
     
     /// Стиль для таймера
-    func millionaireTimerStyle() -> some View {
+    func millionaireTimerStyle(type: TimerType) -> some View {
         self
             .font(.millionaireCaption)
             .fontWeight(.bold)
-            .foregroundColor(.yellow)
+            .foregroundColor(type.color)
     }
     
     /// Стиль для призовых сумм
@@ -106,5 +106,11 @@ extension Text {
             .font(.millionaireCaption)
             .fontWeight(isActive ? .bold : .medium)
             .foregroundColor(isActive ? .yellow : .white.opacity(0.8))
+    }
+    
+    ///  Стиль тонкий для навбара игры
+    func millionaireNavBarStyle(isActive: Bool = false) -> some View {
+        self
+            .font(.millionaireCaption)
     }
 }

@@ -26,6 +26,7 @@ final class GameViewModel: ObservableObject {
     let audioService: IAudioService
     
     private var cancellables = Set<AnyCancellable>()
+    
     private let prizeCalculator = PrizeCalculator()
     
     /// Обработчик изменения состояния игры
@@ -58,6 +59,8 @@ final class GameViewModel: ObservableObject {
     @Published var duration: String = "00:00"
     
     // Доп состояния для UI
+    @Published private(set) var timerType: TimerType = .normal
+    
     @Published var correctAnswer: String?
     @Published var selectedAnswer: String?
     @Published var answerResultState: AnswerResult?
@@ -79,6 +82,7 @@ final class GameViewModel: ObservableObject {
             .getPrizeAmount(for: session.currentQuestionIndex)
             .formatted()
     }
+   
     
     var lifelines: Set<Lifeline> { session.lifelines }
     
@@ -106,7 +110,6 @@ final class GameViewModel: ObservableObject {
     // MARK: - Game Start
     func startGame() {
         audioService.playGameSfx()
-        
         timerService.start30SecondTimer { [weak self] in
             self?.onTimeExpired()
         }
@@ -128,16 +131,22 @@ final class GameViewModel: ObservableObject {
     // MARK: - Timer Binding
     private func bindTimer() {
         timerService.progressPublisher
-            .map { progress in
-                let totalSeconds: Int = 30
+            .map { progress -> (String, TimerType) in
+                let totalSeconds = 30
                 let elapsed = Int(Float(totalSeconds) * progress)
                 let remaining = max(0, totalSeconds - elapsed)
                 let minutes = remaining / 60
                 let seconds = remaining % 60
-                return String(format: "%02d:%02d", minutes, seconds)
+                let formatted = String(format: "%02d:%02d", minutes, seconds)
+                let type = TimerType.getType(for: remaining)
+                return (formatted, type)
             }
             .receive(on: DispatchQueue.main)
-            .assign(to: &$duration)
+            .sink { [weak self] formatted, type in
+                self?.duration = formatted
+                self?.timerType = type
+            }
+            .store(in: &cancellables)
     }
     
     // MARK: - Answer Tap

@@ -11,6 +11,7 @@ struct ContentView: View {
     @EnvironmentObject var gameManager: GameManager
     var body: some View {
         HomeView(gameManager: gameManager)
+            .preferredColorScheme(.dark)
     }
 }
 
