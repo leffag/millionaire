@@ -65,3 +65,20 @@ private extension GameManager {
         case invalidQuestions
     }
 }
+
+extension GameManager {
+    func endGame(withScore score: Int) {
+        // Завершаем текущую сессию
+        //currentSession?.isFinished = true
+        
+        // Обновляем лучший результат если нужно
+        if score > bestScore {
+            bestScore = score
+            // Сохраняем в UserDefaults
+            // UserDefaults.standard.set(bestScore, forKey: "bestScore")
+        }
+        
+        // Очищаем текущую сессию
+        currentSession = nil
+    }
+}

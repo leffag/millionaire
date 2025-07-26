@@ -56,6 +56,10 @@ struct ScoreboardView: View {
                         }
                         .background(Color.white.opacity(0.15))
                         .clipShape(Circle())
+                    } else {
+                        // Пустой Spacer для выравнивания
+                        Color.clear
+                            .frame(width: 48, height: 48)
                     }
                     
                     Spacer()
@@ -95,7 +99,7 @@ struct ScoreboardView: View {
     }
 }
 
-#Preview {
+#Preview("Intermediate") {
     let questions = (1...15).map { i in
         Question(
             difficulty: .easy,
@@ -105,13 +109,37 @@ struct ScoreboardView: View {
             incorrectAnswers: ["B", "C", "D"]
         )
     }
-    let session = GameSession(questions: questions, currentQuestionIndex: 0, score: 0)!
+    let session = GameSession(questions: questions, currentQuestionIndex: 7, score: 15000)!
     
     ScoreboardView(
         session: session,
         mode: .intermediate,
         onAction: {
             print("Withdrawal action")
+        },
+        onClose: {
+            print("Close action")
+        }
+    )
+}
+
+#Preview("Game Over") {
+    let questions = (1...15).map { i in
+        Question(
+            difficulty: .easy,
+            category: "Общие знания",
+            question: "Вопрос?",
+            correctAnswer: "A",
+            incorrectAnswers: ["B", "C", "D"]
+        )
+    }
+    let session = GameSession(questions: questions, currentQuestionIndex: 5, score: 5000)!
+    
+    ScoreboardView(
+        session: session,
+        mode: .gameOver,
+        onAction: {
+            print("No action in game over")
         },
         onClose: {
             print("Close action")

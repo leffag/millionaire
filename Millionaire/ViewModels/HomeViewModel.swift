@@ -51,6 +51,17 @@ final class HomeViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Withdrawal
+    func withdrawAndEndGame() {
+        // Завершаем текущую сессию с текущим счетом
+        if let session = gameManager.currentSession {
+            gameManager.endGame(withScore: session.score)
+        }
+        
+        // Возвращаемся на главный экран
+        navigationPath.removeAll()
+    }
+    
     // MARK: - Private Methods
     private func updateViewState() {
         
@@ -126,11 +137,25 @@ final class HomeViewModel: ObservableObject {
         }
 }
 
+//
+// Поток навигации:
+//
+//HomeView
+//    ├── LoadingView
+//    ├── GameScreen
+//    │   └── ScoreboardView (через toolbar button)
+//    │       ├── [intermediate] → назад к GameScreen
+//    │       └── [gameOver/victory] → GameOverView
+//    └── GameOverView
+//        ├── New Game → HomeView → LoadingView → GameScreen
+//        └── Main Screen → HomeView
+
 // MARK: - Navigation Routes
 extension HomeViewModel {
     enum NavigationRoute: Hashable {
         case loading
         case game(GameSession)
         case scoreboard(GameSession, GameViewModel.ScoreboardMode)
+        case gameOver(GameSession, GameViewModel.ScoreboardMode)
     }
 }
