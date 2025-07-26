@@ -9,6 +9,7 @@ import SwiftUI
 
 struct GameScreen: View {
     @ObservedObject var viewModel: GameViewModel
+    @Environment(\.scenePhase) var scenePhase
     
     @State private var showCustomAlert = false
     @State private var alertMessage = ""
@@ -42,6 +43,20 @@ struct GameScreen: View {
         .onAppear {
             viewModel.startGame()
         }
+        .onDisappear {
+            // Ставим на паузу при уходе с экрана
+            viewModel.pauseGame()
+        }
+        .onChange(of: scenePhase) { newPhase in
+            switch newPhase {
+            case .active:
+                viewModel.resumeGame()
+            case .inactive, .background:
+                viewModel.pauseGame()
+            @unknown default:
+                break
+            }
+        }
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden()
         .overlay(
@@ -60,11 +75,14 @@ struct GameScreen: View {
             }
         )
         
-        
-        
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                BackBarButtonView()
+                BackBarButtonView(
+                    onBack: {
+                        // Дополнительная логика перед возвратом
+                        viewModel.pauseGame()
+                    }
+                )
             }
             
             ToolbarItem(placement: .principal) {

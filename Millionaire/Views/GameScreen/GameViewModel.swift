@@ -115,6 +115,9 @@ final class GameViewModel: ObservableObject {
     
     // MARK: - Game Start
     func startGame() {
+        // Стартуем только если нет выбранного ответа
+        guard selectedAnswer == nil else { return }
+        
         audioService.playGameSfx()
         timerService.start30SecondTimer { [weak self] in
             self?.onTimeExpired()
@@ -316,3 +319,27 @@ private extension Question {
     }
 }
 
+extension GameViewModel {
+    // MARK: - Game Control Methods
+    
+    /// Ставит игру на паузу (при уходе с экрана)
+    func pauseGame() {
+        timerService.pauseTimer()
+        audioService.pause()
+    }
+    
+    /// Возобновляет игру (при возврате на экран)
+    func resumeGame() {
+        // Возобновляем только если нет выбранного ответа
+        guard selectedAnswer == nil else { return }
+        
+        timerService.resumeTimer()
+        audioService.resume()
+    }
+    
+    /// Полностью останавливает игру (при выходе)
+    func stopGame() {
+        answerProcessingTask?.cancel()
+        stopGameResources()
+    }
+}
