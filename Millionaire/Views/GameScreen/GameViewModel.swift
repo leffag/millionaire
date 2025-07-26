@@ -71,6 +71,12 @@ final class GameViewModel: ObservableObject {
     // Важно: отменять задачу при деинициализации
     deinit {
         answerProcessingTask?.cancel()
+        
+        // Когда GameViewModel уничтожается, все его свойства тоже
+        //Если при возврате назад нет этих сообщений - есть утечка!
+#if DEBUG
+        print(" GameViewModel деинициализирован")
+#endif
     }
     
     var question: Question { session.currentQuestion }
