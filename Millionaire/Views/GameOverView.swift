@@ -7,7 +7,30 @@
 
 import SwiftUI
 
+/// Экран завершения игры (Game Over).
+///
+/// Классическая представительная вью без собственного состояния.
+/// Отображает итоговые данные текущей игровой сессии:
+/// - уровень, на котором завершилась игра
+/// - финальный счёт в валюте
+///
+/// Особенности:
+/// - Не содержит бизнес-логики
+/// - Не изменяет своё состояние (только `let` свойства)
+/// - Выполняет две простые навигационные команды: «Новая игра» и «На главный экран»
+
 struct GameOverView: View {
+    // MARK: - Properties
+    
+    /// Текущая игровая сессия — источник финальных данных
+    let session: GameSession
+    
+    /// Доп режим отображения экрана (например, поражение, победа и пр.)
+    let mode: GameViewModel.ScoreboardMode
+    
+    let onNewGame: () -> Void
+    let onMainScreen: () -> Void
+    
     var body: some View {
         ZStack {
             backgroundImage
@@ -18,18 +41,19 @@ struct GameOverView: View {
                     .scaledToFit()
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.top, -80)
+                
                 VStack(spacing: 8) {
                     Text("Game Over!")
                         .foregroundStyle(.white)
                         .font(Font.custom("SF Compact Display", size: 32))
                         .fontWeight(.semibold)
                     
-                    Text("level 8")
+                    Text("level \(session.currentQuestionIndex + 1)")
                         .foregroundStyle(.white.opacity(0.6))
                         .font(Font.custom("SF Compact Display", size: 16))
                         .fontWeight(.regular)
                     HStack() {
-                        Text("$15,000")
+                        Text("$\(session.score.formatted())")
                             .foregroundStyle(.white)
                             .font(Font.custom("SF Compact Display", size: 24))
                             .fontWeight(.semibold)
@@ -66,5 +90,20 @@ struct GameOverView: View {
 }
 
 #Preview {
-    GameOverView()
+    GameOverView(
+        session: GameSession(
+            questions: Array(repeating: Question(
+                difficulty: .easy,
+                category: "Test",
+                question: "Test?",
+                correctAnswer: "A",
+                incorrectAnswers: ["B", "C", "D"]
+            ), count: 15),
+            currentQuestionIndex: 7,
+            score: 15000
+        )!,
+        mode: .gameOver,
+        onNewGame: { print("New game") },
+        onMainScreen: { print("Main screen") }
+    )
 }

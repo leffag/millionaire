@@ -122,7 +122,7 @@ struct HomeView: View {
     @ViewBuilder
     private var logoAndScoreSection: some View {
         VStack() {
-            Image("HomeScreenLogo")
+            Image(.homeScreenLogo)
                 .frame(width: 311, height: 287)
             // Лучший счет
             if viewModel.viewMode != .firstStart {
@@ -195,6 +195,7 @@ struct HomeView: View {
     @ViewBuilder
     private func destinationView(for route: HomeViewModel.NavigationRoute) -> some View {
         switch route {
+            
         case .loading:
             LoadingView()
             
@@ -202,44 +203,55 @@ struct HomeView: View {
             GameScreen(
                 viewModel: viewModel.createGameViewModel(for: session)
             )
+            
         case .scoreboard(let session, let mode):
             ScoreboardView(
                 session: session,
                 mode: mode,
                 onAction: {
-                    // TODO: Логика withdrawal
                     print(" Withdrawal tapped")
+                    // Логика withdrawal - забрать деньги и завершить игру
+                    viewModel.withdrawAndEndGame()
                 },
                 onClose: {
+//                    Логика переходов от ScoreboardView:
+//                    .intermediate → возврат к игре
+//                    .gameOver/.victory → переход к GameOverView
+                    
                     // Возвращаемся назад - убираем скорборд из навигации
-                    viewModel.navigationPath.removeLast()
+                    switch mode {
+                    case .intermediate:
+                        // В промежуточном режиме - возвращаемся к игре
+                        viewModel.navigationPath.removeLast()
+                    case .gameOver, .victory:
+                        // При окончании игры - переходим к GameOverView
+                        viewModel.navigationPath.removeLast() // Убираем scoreboard
+                        viewModel.navigationPath.append(.gameOver(session, mode))
+                    }
+                }
+            )
+            
+        case .gameOver(let session, let mode):
+//            Обработка действий из GameOverView:
+//            "New Game" → очистка навигации и запуск новой игры
+//            "Main Screen" → очистка навигации и возврат на главный
+            GameOverView(
+                session: session,
+                mode: mode,
+                onNewGame: {
+                    // Очищаем навигацию и начинаем новую игру
+                    viewModel.navigationPath.removeAll()
+                    viewModel.startNewGame()
+                },
+                onMainScreen: {
+                    // Возвращаемся на главный экран
+                    viewModel.navigationPath.removeAll()
                 }
             )
         }
         
     }
     
-}
-
-struct LoadingView: View {
-    var body: some View {
-        ZStack {
-            Image("Background")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .ignoresSafeArea()
-            
-            VStack(spacing: 20) {
-                ProgressView()
-                    .scaleEffect(1.5)
-                    .tint(.white)
-                
-                Text("Загрузка вопросов...")
-                    .font(.headline)
-                    .foregroundColor(.white)
-            }
-        }
-    }
 }
 
 // MARK: - Preview
