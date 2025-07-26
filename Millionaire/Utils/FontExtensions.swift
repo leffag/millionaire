@@ -95,7 +95,7 @@ extension Text {
     /// Стиль для таймера
     func millionaireTimerStyle(type: TimerType) -> some View {
         self
-            .font(.millionaireCaption)
+            .font(.millionaireBody)
             .fontWeight(.bold)
             .foregroundColor(type.color)
     }

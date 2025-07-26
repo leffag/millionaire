@@ -212,7 +212,7 @@ final class GameViewModel: ObservableObject {
         }
         
         // Обновляем сессию
-        //session = newSession
+        session = newSession
         
         // Звук
         switch answerResult {
