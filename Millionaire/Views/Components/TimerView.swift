@@ -28,11 +28,28 @@ enum TimerType {
 }
 
 struct TimerView: View {
+    
+    let timerType: TimerType
+    let duration: String
+    
     var body: some View {
-        Text("Hello, World!")
+        HStack(spacing: 8) {
+            Image(systemName: "timer")
+                .font(.system(size: 20, weight: .semibold))
+            
+            Text(duration)
+                .millionaireTimerStyle(type: timerType)
+        }
+        .foregroundColor(timerType.color)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(
+            timerType.color.opacity(0.2)
+        )
+        .clipShape(Capsule())
     }
 }
 
 #Preview {
-    TimerView()
+    TimerView(timerType: TimerType.normal, duration: "0:0")
 }

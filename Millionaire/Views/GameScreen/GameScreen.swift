@@ -100,12 +100,12 @@ struct GameScreen: View {
     
     // MARK: - Timer View
     private func timerView() -> some View {
-        ZStack {
-            Text(viewModel.duration)
-                .millionaireTimerStyle(type: viewModel.timerType)
-        }
+        TimerView(
+            timerType: viewModel.timerType,
+            duration: viewModel.duration
+        )
+        .frame(width: 150, height: 80)
     }
-    
     
     // MARK: - Question View
     private func questionTextView() -> some View {
