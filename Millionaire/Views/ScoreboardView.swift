@@ -91,6 +91,7 @@ struct ScoreboardView: View {
                                 message: "You lost. Your prize is $0.",
                                 onDismiss: {
                                     showGameOverZeroAlert = false
+                                    viewModel.deinitAudioService()
                                     onClose()
                                 },
                                 showSecondButton: false
@@ -105,7 +106,7 @@ struct ScoreboardView: View {
         .onAppear {
                     viewModel.playSound(mode: mode)
 
-                    if mode == .gameOver && viewModel.currentPrize == 0 {
+                    if mode == .gameOver && viewModel.currentPrize < 5000 {
                         Task {
                             try await Task.sleep(for: .seconds(2))
                             withAnimation {

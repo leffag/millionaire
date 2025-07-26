@@ -20,10 +20,9 @@ final class ScoreboardViewModel: ObservableObject {
         return prizeCalculator.getPrizeAmount(for: gameSession.currentQuestionIndex)
     }
     
-    init(gameSession: GameSession,audioService: IAudioService = AudioService()) {
+    init(gameSession: GameSession, audioService: IAudioService = AudioService.shared) {
         self.gameSession = gameSession
         self.audioService = audioService
-        
         updateLevels()
     }
     
