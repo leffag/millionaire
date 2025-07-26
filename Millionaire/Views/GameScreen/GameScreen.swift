@@ -63,9 +63,17 @@ struct GameScreen: View {
         ) {
             if let scoreboardState = viewModel.currentScoreboardState,
                case .scoreboard(let session, let mode) = scoreboardState {
-                ScoreboardView(session: session, mode: mode) {
-                    viewModel.handleScoreboardDismiss()
-                }
+                ScoreboardView(
+                    session: session,
+                    mode: mode,
+                    onAction: {
+                        // TODO: Логика withdrawal
+                        print("Withdrawal tapped")
+                    },
+                    onClose: {
+                        viewModel.handleScoreboardDismiss()
+                    }
+                )
             }
         }
     }
@@ -155,7 +163,7 @@ struct GameScreen: View {
         guard let selected = viewModel.selectedAnswer else {
             return .regular
         }
-
+        
         // Подсвечиваем выбранную кнопку
         if selected == answer {
             switch viewModel.answerResultState {
@@ -167,30 +175,16 @@ struct GameScreen: View {
                 return .regular
             }
         }
-
+        
         // Если выбран неправильный ответ, но это — правильный
         if viewModel.answerResultState == .incorrect,
            answer == viewModel.correctAnswer {
             return .correct
         }
-
+        
         return .regular
     }
-    
-    @ViewBuilder
-    private func destinationView(for state: GameViewModel.GameNavigationState) -> some View {
-        switch state {
-        case .scoreboard(let session, let mode):
-            ScoreboardView(
-                session: session,
-                mode: mode
-            ) {
-                viewModel.handleScoreboardDismiss()
-            }
-        case .playing, .showingResult:
-            EmptyView()
-        }
-    }
+
 }
 
 // MARK: - Preview
