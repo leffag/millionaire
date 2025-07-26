@@ -270,11 +270,13 @@ final class GameViewModel: ObservableObject {
     // MARK: - Help Button Actions
     func fiftyFiftyButtonTap() {
         guard let result = session.useFiftyFiftyLifeline() else {
-            // Подсказка недоступна, не делаем ничего
             return
         }
-        
-        // Помечаем полученные от подсказки ответы как недоступные к выбору
+
+        // Обновляем сессию
+        session = session // Триггерим onSessionUpdated
+
+        // Помечаем недоступные ответы
         disabledAnswers = result.disabledAnswers
     }
     
@@ -297,6 +299,7 @@ final class GameViewModel: ObservableObject {
     }
     
     func testScoreboard() {
+        stopGameResources()
         onNavigateToScoreboard?(session, .intermediate)
     }
 }

@@ -88,9 +88,7 @@ struct GameScreen: View {
         HStack {
             VStack {
                 Text("QUESTION #\(viewModel.numberQuestion)")
-                    .millionaireTitleStyle()
-                
-                
+                    .fontWeight(.ultraLight)
                 
                 Text("$\(viewModel.priceQuestion)")
                     .millionaireTitleStyle()
@@ -130,7 +128,10 @@ struct GameScreen: View {
                 ) {
                     viewModel.onAnswer(answer)
                 }
-                .disabled(viewModel.selectedAnswer == answer)
+                .disabled(
+                    viewModel.selectedAnswer == answer ||
+                    viewModel.disabledAnswers.contains(answer)
+                )
             }
         }
     }
