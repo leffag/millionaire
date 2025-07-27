@@ -24,6 +24,7 @@ final class GameViewModel: ObservableObject {
     // MARK: - Services
     let timerService: ITimerService
     let audioService: IAudioService
+    private let storage: IStorageService
     
     private var cancellables = Set<AnyCancellable>()
     
@@ -104,11 +105,13 @@ final class GameViewModel: ObservableObject {
         onGameFinished: (() -> Void)? = nil,
         onNavigateToScoreboard: ((GameSession, ScoreboardMode) -> Void)? = nil,
         audioService: IAudioService = AudioService.shared,
+        storage: IStorageService = StorageService.shared,
         timerService: ITimerService = TimerService()
     ) {
         self.session = initialSession
         self.onSessionUpdated = onSessionUpdated
         self.audioService = audioService
+        self.storage = storage
         self.timerService = timerService
         self.onGameFinished = onGameFinished
         self.onNavigateToScoreboard = onNavigateToScoreboard
@@ -393,6 +396,7 @@ extension GameViewModel {
     func pauseGame() {
         timerService.pauseTimer()
         audioService.pause()
+        storage.saveGameSession(session)
     }
     
     /// Возобновляет игру (при возврате на экран)

@@ -31,7 +31,7 @@ struct CallToFriendLifelineResult {
 }
 
 /// Модель игры с полной логикой обновления её состояния
-struct GameSession: Hashable {
+struct GameSession: Hashable, Codable {
     /// Массив вопросов
     let questions: [Question]
     

@@ -8,7 +8,7 @@
 import Foundation
 
 /// Перечисление с подсказками
-enum Lifeline: Hashable {
+enum Lifeline: Codable, Hashable {
     // 50:50
     case fiftyFifty
     // Помощь зала
