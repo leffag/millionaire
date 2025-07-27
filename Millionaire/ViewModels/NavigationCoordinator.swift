@@ -189,6 +189,16 @@ final class NavigationCoordinator: ObservableObject {
             }
         )
     }
+    
+    func showGameOverAfterWithdrawal(_ session: GameSession) {
+//        // Убираем скорборд и показываем GameOver
+//        if path.last?.isScoreboard == true {
+//            path.removeLast()
+//        }
+        
+        // Показываем GameOver с режимом intermediate (забрали деньги)
+        path.append(.gameOver(session, .intermediate))
+    }
 }
 
 // MARK: - Helper Extensions
