@@ -43,10 +43,6 @@ struct GameScreen: View {
         .onAppear {
             viewModel.startGame()
         }
-        .onDisappear {
-            // Ставим на паузу при уходе с экрана
-            viewModel.pauseGame()
-        }
         .onChange(of: scenePhase) { newPhase in
             switch newPhase {
             case .active:

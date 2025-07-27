@@ -66,11 +66,11 @@ struct GameOverView: View {
                 
                 VStack(spacing: 46) {
                     Button.millionaire("New game", variant: .primary) {
-                        print("New game")
+                        onNewGame()
                     }
                     .padding(.top, 40)
                     Button("Main screen") {
-                        print("Main screen")
+                        onMainScreen()
                     }
                     .millionaireStyle(.regular)
                 }

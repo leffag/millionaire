@@ -50,6 +50,12 @@ final class HomeViewModel: ObservableObject {
         }
     }
     
+    func startNewGameDirect() {
+        Task {
+            await startGameDirect()
+        }
+    }
+    
     func continueGame() {
         Task {
             await startGame(type: .continued)
@@ -64,7 +70,7 @@ final class HomeViewModel: ObservableObject {
         }
         
         // Возвращаемся на главный экран через координатор
-         navigationCoordinator.popToRoot()
+        navigationCoordinator.popToRoot()
     }
     
     // MARK: - Private Methods
@@ -103,6 +109,30 @@ final class HomeViewModel: ObservableObject {
             navigationCoordinator.showGame(session)
         } catch {
             // Обработка ошибки
+            navigationCoordinator.popToRoot()
+            errorMessage = "Не удалось загрузить вопросы. Проверьте интернет-соединение."
+            showError = true
+        }
+        
+        isLoading = false
+    }
+    
+    // MARK: - Direct Game Start (from GameOver)
+    private func startGameDirect() async {
+        // Прямой переход без возврата на главный экран
+        navigationCoordinator.showLoadingDirect()
+        isLoading = true
+        
+        do {
+            let session = try await gameManager.startNewGame()
+            
+            // Небольшая задержка для UX
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            
+            // Прямая замена на игру
+            navigationCoordinator.showGameDirect(session)
+        } catch {
+            // При ошибке возвращаемся на главный
             navigationCoordinator.popToRoot()
             errorMessage = "Не удалось загрузить вопросы. Проверьте интернет-соединение."
             showError = true
