@@ -49,6 +49,7 @@ final class GameManager: ObservableObject {  // Управляет сессия�
     }
     
     /// Восстанавливает сохранённую сессию
+    @MainActor
     func restoreSession(_ session: GameSession) {
         self.currentSession = session
     }
