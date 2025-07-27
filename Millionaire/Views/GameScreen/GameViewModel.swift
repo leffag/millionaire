@@ -122,6 +122,7 @@ final class GameViewModel: ObservableObject {
         timerService.start30SecondTimer { [weak self] in
             self?.onTimeExpired()
         }
+        print(session.currentQuestion.correctAnswer)
     }
     
     private func onTimeExpired() {
@@ -129,7 +130,7 @@ final class GameViewModel: ObservableObject {
         stopGameResources()
         
         //  Время вышло - показываем скорборд как поражение
-        checkGameEnd(answerResult: nil) // ответ не выбран
+        checkGameEnd(answerResult: .incorrect) // ответ не выбран
     }
     
     private func stopGameResources() {
@@ -227,10 +228,8 @@ final class GameViewModel: ObservableObject {
         switch answerResult {
         case .correct:
             answerResultState = .correct
-            audioService.playCorrectAnswerSfx()
         case .incorrect:
             answerResultState = .incorrect
-            audioService.playWrongAnswerSfx()
         }
         
         // Ждём анимации результата
@@ -268,6 +267,7 @@ final class GameViewModel: ObservableObject {
             }
         } else {
             mode = .intermediate
+            print(" Выигрыш: \(session.score) ")
         }
         
         // Делегируем навигацию родительскому компоненту

@@ -12,7 +12,7 @@ final class ScoreboardViewModel: ObservableObject {
     
     private let prizeCalculator = PrizeCalculator()
     
-    private var gameSession: GameSession
+    var gameSession: GameSession
     private let audioService: IAudioService
     
     /// Текущий приз игрока
@@ -34,7 +34,7 @@ final class ScoreboardViewModel: ObservableObject {
                 number: prize.questionNumber,
                 amount: prize.amount,
                 isCheckpoint: prize.isCheckpoint,
-                isCurrent: prize.questionNumber == gameSession.currentQuestionIndex + 1,
+                isCurrent: prize.questionNumber == gameSession.currentQuestionIndex,
                 isTop: prize.questionNumber == 15
             )
         }
@@ -43,12 +43,16 @@ final class ScoreboardViewModel: ObservableObject {
     func playSound(mode: GameViewModel.ScoreboardMode) {
         switch mode {
         case .intermediate:
-            break
+            audioService.playCorrectAnswerSfx()
         case .victory:
             audioService.playCorrectAnswerSfx()
         case .gameOver:
             audioService.playWrongAnswerSfx()
         }
+    }
+    
+    func takeMoney() {
+        print("take money")
     }
     
     func deinitAudioService() {
