@@ -58,10 +58,10 @@ final class NavigationCoordinator: ObservableObject {
     }
     
     func showGameOver(_ session: GameSession, mode: GameViewModel.ScoreboardMode) {
-        // Убираем scoreboard и показываем game over
-        if path.last?.isScoreboard == true {
-            path.removeLast()
-        }
+        //        // Убираем scoreboard и показываем game over
+        //        if path.last?.isScoreboard == true {
+        //            path.removeLast()
+        //        }
         path.append(.gameOver(session, mode))
     }
     
@@ -89,22 +89,24 @@ final class NavigationCoordinator: ObservableObject {
     // MARK: - GameOver Actions
     
     func startNewGameFromGameOver() {
-        // Очищаем стек навигации
-        popToRoot() /// начинает анимацию возврата
-        
-        // Запускаем новую игру после возврата на главный экран
-        Task { @MainActor in
-            // Небольшая задержка - ждем завершения анимации навигации
-            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 сек
-            
-            // Запускаем новую игру
-            homeViewModel?.startNewGame() /// сразу добавляет новый маршрут
-        }
+        // Специальный метод для прямого перехода к новой игре
+        homeViewModel?.startNewGameDirect()
     }
+    
     
     func returnToMainScreenFromGameOver() {
         // Просто возвращаемся на главный экран
         popToRoot()
+    }
+    
+    /// Прямая замена текущего пути на LoadingView (без анимации через главный экран)
+    func showLoadingDirect() {
+        path = [.loading]
+    }
+    
+    /// Прямая замена на игру (используется после прямой загрузки)
+    func showGameDirect(_ session: GameSession) {
+        path = [.game(session)]
     }
     
     // MARK: - View Factory

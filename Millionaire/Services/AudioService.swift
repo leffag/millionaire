@@ -14,6 +14,8 @@ protocol IAudioService {
     func playCorrectAnswerSfx()
     func playAnswerLockedSfx()
     func stop()
+    func pause()
+    func resume()
 }
 
 final class AudioService: IAudioService {

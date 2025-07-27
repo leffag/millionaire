@@ -10,7 +10,13 @@ import SwiftUI
 struct BackBarButtonView: View {
     // MARK: - Properties
     @Environment(\.dismiss) var dismiss
-    let foregroundStyle: Color = Color.white
+    var foregroundStyle: Color = Color.white
+    let onBack: (() -> Void)?
+    
+    init(foregroundStyle: Color = .white, onBack: (() -> Void)? = nil) {
+        self.foregroundStyle = foregroundStyle
+        self.onBack = onBack
+    }
     
     // MARK: - Drawing Constants
     private struct Drawing {
@@ -19,7 +25,10 @@ struct BackBarButtonView: View {
     
     // MARK: - Body
     var body: some View {
-        Button(action: { dismiss() }) {
+        Button(action: {
+            onBack?()  // Вызываем коллбек перед dismiss
+            dismiss()
+        }) {
             Image(systemName: "arrow.left")
                 .resizable()
                 .scaledToFit()
@@ -27,4 +36,5 @@ struct BackBarButtonView: View {
                 .foregroundStyle(foregroundStyle)
         }
     }
+
 }

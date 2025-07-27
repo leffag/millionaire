@@ -15,6 +15,7 @@ protocol ITimerService {
     func start30SecondTimer(completion: @escaping () -> Void)
     func pauseTimer()
     func stopTimer()
+    func resumeTimer()
 }
 
 // MARK: - Implementation

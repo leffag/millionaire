@@ -88,7 +88,7 @@ final class GameViewModel: ObservableObject {
             .getPrizeAmount(for: session.currentQuestionIndex)
             .formatted()
     }
-   
+    
     
     var lifelines: Set<Lifeline> { session.lifelines }
     
@@ -115,6 +115,9 @@ final class GameViewModel: ObservableObject {
     
     // MARK: - Game Start
     func startGame() {
+        // Стартуем только если нет выбранного ответа
+        guard selectedAnswer == nil else { return }
+        
         audioService.playGameSfx()
         timerService.start30SecondTimer { [weak self] in
             self?.onTimeExpired()
@@ -126,7 +129,7 @@ final class GameViewModel: ObservableObject {
         stopGameResources()
         
         //  Время вышло - показываем скорборд как поражение
-        checkGameEnd()
+        checkGameEnd(answerResult: nil) // ответ не выбран
     }
     
     private func stopGameResources() {
@@ -224,8 +227,10 @@ final class GameViewModel: ObservableObject {
         switch answerResult {
         case .correct:
             answerResultState = .correct
+            audioService.playCorrectAnswerSfx()
         case .incorrect:
             answerResultState = .incorrect
+            audioService.playWrongAnswerSfx()
         }
         
         // Ждём анимации результата
@@ -239,11 +244,9 @@ final class GameViewModel: ObservableObject {
                 answerResultState = nil
                 correctAnswer = nil
                 answers = session.currentQuestion.allAnswers.shuffled()
-                startGame()
-            } else {
-                // Игра окончена
-                checkGameEnd()
             }
+            // Игра окончена
+            checkGameEnd(answerResult: answerResult)
             
         } catch {
             // Отменено
@@ -251,7 +254,7 @@ final class GameViewModel: ObservableObject {
         }
     }
     
-    private func checkGameEnd() {
+    private func checkGameEnd(answerResult: AnswerResult?) {
         let mode: ScoreboardMode
         
         if session.isFinished {
@@ -276,10 +279,10 @@ final class GameViewModel: ObservableObject {
         guard let result = session.useFiftyFiftyLifeline() else {
             return
         }
-
+        
         // Обновляем сессию
         session = session // Триггерим onSessionUpdated
-
+        
         // Помечаем недоступные ответы
         disabledAnswers = result.disabledAnswers
     }
@@ -314,3 +317,27 @@ private extension Question {
     }
 }
 
+extension GameViewModel {
+    // MARK: - Game Control Methods
+    
+    /// Ставит игру на паузу (при уходе с экрана)
+    func pauseGame() {
+        timerService.pauseTimer()
+        audioService.pause()
+    }
+    
+    /// Возобновляет игру (при возврате на экран)
+    func resumeGame() {
+        // Возобновляем только если нет выбранного ответа
+        guard selectedAnswer == nil else { return }
+        
+        timerService.resumeTimer()
+        audioService.resume()
+    }
+    
+    /// Полностью останавливает игру (при выходе)
+    func stopGame() {
+        answerProcessingTask?.cancel()
+        stopGameResources()
+    }
+}
