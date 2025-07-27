@@ -175,7 +175,13 @@ struct GameScreen: View {
             
             HelpButton(
                 type: .callToFriend,
-                action: viewModel.callYourFriendButtonTap
+                action: {
+                    viewModel.callYourFriendButtonTap()
+                    alertMessage = "You have the right to make one mistake."
+                    withAnimation {
+                        showCustomAlert = true
+                    }
+                }
             )
             .disabled(!viewModel.lifelines.contains(.callToFriend))
         }
@@ -186,8 +192,12 @@ struct GameScreen: View {
             return .regular
         }
         
-        // Подсвечиваем выбранную кнопку
+        // Если выбранный ответ был неправильным, но подсказка активирована
         if selected == answer {
+            if viewModel.mistakeAllowedUsed {
+                return .wrong // Показываем, что он неправильный, но игра продолжается
+            }
+
             switch viewModel.answerResultState {
             case .correct:
                 return .correct
@@ -198,12 +208,11 @@ struct GameScreen: View {
             }
         }
         
-        // Если выбран неправильный ответ, но это — правильный
         if viewModel.answerResultState == .incorrect,
            answer == viewModel.correctAnswer {
             return .correct
         }
-        
+
         return .regular
     }
     

@@ -64,6 +64,9 @@ final class GameViewModel: ObservableObject {
     @Published var correctAnswer: String?
     @Published var selectedAnswer: String?
     @Published var answerResultState: AnswerResult?
+    ///флаг, чтобы знать, была ли применена подсказка
+    @Published var mistakeAllowedUsed: Bool = false
+    private var mistakeUsedThisTurn: Bool = false
     
     // Храним текущую задачу для возможности отмены
     private var answerProcessingTask: Task<Void, Never>?
@@ -217,8 +220,18 @@ final class GameViewModel: ObservableObject {
             let prize = prizeCalculator.getPrizeAmount(for: session.currentQuestionIndex)
             newSession.addScore(prize)
         case .incorrect:
-            let checkpoint = prizeCalculator.getCheckpointPrizeAmount(before: session.currentQuestionIndex)
-            newSession.setScore(checkpoint)
+            if mistakeAllowedUsed {
+                // Засчитываем как правильный, но отмечаем, что был ошибочный
+                mistakeUsedThisTurn = true
+                mistakeAllowedUsed = false // Сбросить после одного использования
+                let prize = prizeCalculator.getPrizeAmount(for: session.currentQuestionIndex)
+                newSession.addScore(prize)
+                answerResultState = .correct
+            } else {
+                let checkpoint = prizeCalculator.getCheckpointPrizeAmount(before: session.currentQuestionIndex)
+                newSession.setScore(checkpoint)
+                answerResultState = .incorrect
+            }
         }
         
         // Обновляем сессию
@@ -269,7 +282,7 @@ final class GameViewModel: ObservableObject {
             mode = .intermediate
             print(" Выигрыш: \(session.score) ")
         }
-        
+        print(mode)
         // Делегируем навигацию родительскому компоненту
         onNavigateToScoreboard?(session, mode)
     }
@@ -297,12 +310,10 @@ final class GameViewModel: ObservableObject {
     }
     
     func callYourFriendButtonTap() {
-        guard let result = session.useCallToFriendLifeline() else {
-            // Подсказка недоступна, не делаем ничего
-            return
-        }
-        print(result)
-        // TODO: Реализация подсказки
+        var session = self.session
+        session.useLifeline(.callToFriend)
+        self.session = session
+        mistakeAllowedUsed = true
     }
     
     func testScoreboard() {
