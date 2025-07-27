@@ -128,10 +128,7 @@ final class NavigationCoordinator: ObservableObject {
                 .navigationBarBackButtonHidden(true)
             
         case .game(let session):
-            
-            let _ = print("🎮 Создаем GameScreen с сессией:")
-            let _ = print("  - Индекс: \(session.currentQuestionIndex)")
-            let _ = print("  - Счет: \(session.score)")
+
             GameScreen(
                 viewModel: createGameViewModel(for: session)
             )
