@@ -165,7 +165,7 @@ struct GameScreen: View {
                 type: .audience,
                 action: {
                     viewModel.audienceButtonTap()
-                    alertMessage = "Аудитория выбрала: C"
+                    alertMessage = "Аудитория выбрала:\n\(viewModel.answersForAudienceLifeline ?? "")"
                     withAnimation {
                         showCustomAlert = true
                     }
