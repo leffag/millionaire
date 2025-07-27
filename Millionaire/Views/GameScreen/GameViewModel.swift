@@ -207,6 +207,9 @@ final class GameViewModel: ObservableObject {
     private func processAnswer(_ answer: String) async {
         var newSession = session
         
+        // Сохраняем индекс текущего вопроса ДО обработки
+        let currentQuestionIndex = session.currentQuestionIndex
+        
         // Сохраняем выбранный ответ — важно для подсветки
         selectedAnswer = answer
         correctAnswer = newSession.currentQuestion.correctAnswer
@@ -219,39 +222,39 @@ final class GameViewModel: ObservableObject {
         // Начисляем призы исподбзуя PrizeCalculator
         switch answerResult {
         case .correct:
-            let prize = prizeCalculator.getPrizeAmount(for: session.currentQuestionIndex)
+            let prize = prizeCalculator.getPrizeAmount(for: currentQuestionIndex)
             newSession.addScore(prize)
         case .incorrect:
             if mistakeAllowedUsed {
                 // Засчитываем как правильный, но отмечаем, что был ошибочный
                 mistakeUsedThisTurn = true
                 mistakeAllowedUsed = false // Сбросить после одного использования
-                let prize = prizeCalculator.getPrizeAmount(for: session.currentQuestionIndex)
+                let prize = prizeCalculator.getPrizeAmount(for: currentQuestionIndex)
                 newSession.addScore(prize)
                 answerResultState = .correct
             } else {
-                let checkpoint = prizeCalculator.getCheckpointPrizeAmount(before: session.currentQuestionIndex)
+                let checkpoint = prizeCalculator.getCheckpointPrizeAmount(before: currentQuestionIndex)
                 newSession.setScore(checkpoint)
                 answerResultState = .incorrect
             }
         }
         
-        // Обновляем сессию
-        session = newSession
+        // НЕ обновляем сессию сразу!
+        // session = newSession
         
-        // Звук
-        switch answerResult {
-        case .correct:
-            answerResultState = .correct
-        case .incorrect:
-            answerResultState = .incorrect
-        }
+        // Устанавливаем состояние результата для анимации
+        answerResultState = answerResult == .incorrect && !mistakeUsedThisTurn ? .incorrect : .correct
+
         
         // Ждём анимации результата
         do {
             try await Task.sleep(for: .seconds(2))
             try Task.checkCancellation()
             
+            // ТЕПЕРЬ обновляем сессию
+            session = newSession
+            
+            // Проверяем окончание игры
             if answerResult == .correct && !session.isFinished {
                 // Подготовка следующего вопроса
                 selectedAnswer = nil  // <-- переносим сюда
