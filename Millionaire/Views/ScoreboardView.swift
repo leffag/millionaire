@@ -59,7 +59,7 @@ struct ScoreboardView: View {
                 }
             }
             .blur(radius: showWithdrawalAlert ? 5 : 0)
-            
+            .blur(radius: showGameOverZeroAlert ? 5 : 0)
             // Alert Overlay
             if showWithdrawalAlert {
                 Color.black.opacity(0.5)
@@ -69,14 +69,16 @@ struct ScoreboardView: View {
                     }
 
                 CustomAlertView(
-                    message: "Are you sure you want to claim a prize of $\(viewModel.currentPrize)?",
+                    message: "Are you sure you want to claim a prize of $\(viewModel.gameSession.score)?",
                     onDismiss: {
+                       
                         showWithdrawalAlert = false
                     },
                     showSecondButton: true,
                     secondButtonAction: {
-                        showWithdrawalAlert = false
+                        viewModel.takeMoney()
                         onAction()
+                        showWithdrawalAlert = false
                     }
                 )
                 .frame(width: 300, height: 400)
@@ -105,10 +107,9 @@ struct ScoreboardView: View {
         .navigationBarBackButtonHidden()
         .onAppear {
                     viewModel.playSound(mode: mode)
-
                     if mode == .gameOver && viewModel.currentPrize < 5000 {
                         Task {
-                            try await Task.sleep(for: .seconds(2))
+                            try await Task.sleep(for: .seconds(1))
                             withAnimation {
                                 showGameOverZeroAlert = true
                             }
@@ -118,7 +119,7 @@ struct ScoreboardView: View {
         
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                if mode == .intermediate {
+                if mode == .intermediate && !viewModel.gameSession.isFinished {
                     Button(action: { showWithdrawalAlert = true }) {
                         Image("IconWithdrawal")
                             .resizable()
@@ -187,4 +188,30 @@ struct ScoreboardView: View {
             print("Close action")
         }
     )
+}
+
+#Preview("Victory") {
+    NavigationView {
+        let questions = (1...15).map { i in
+            Question(
+                difficulty: .easy,
+                category: "Общие знания",
+                question: "Вопрос?",
+                correctAnswer: "A",
+                incorrectAnswers: ["B", "C", "D"]
+            )
+        }
+        let session = GameSession(questions: questions, currentQuestionIndex: 5, score: 5000)!
+        
+        ScoreboardView(
+            session: session,
+            mode: .victory,
+            onAction: {
+                print("No action in game over")
+            },
+            onClose: {
+                print("Close action")
+            }
+        )
+    }
 }

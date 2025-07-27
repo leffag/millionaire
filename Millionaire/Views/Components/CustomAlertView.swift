@@ -88,7 +88,7 @@ struct ShadowedCardView<Content: View>: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(Color.backgroundGradientTop)
+                .fill(.answerGradient3)
                 .basicShadow()
                 .overlay(
                     RoundedRectangle(cornerRadius: cornerRadius)
