@@ -304,47 +304,59 @@ final class GameViewModel: ObservableObject {
     
     func audienceButtonTap() {
         guard let result = session.useAudienceLifeline() else {
-            // Подсказка недоступна, не делаем ничего
             return
         }
         
+        // Определяем базовую вероятность правильного ответа
+        let baseProbability = numberQuestion <= 5 ? 0.7 : 0.5
+        
+        // Учитываем использование подсказки 50:50
+        let activeAnswersCount = answers.count - disabledAnswers.count
+        let adjustedProbability = activeAnswersCount == 2 ? 0.85 : baseProbability
+        
+        // Создаем массив для распределения процентов
         var audienceResults: [(answer: String, percentage: Int)] = []
         
+        // Получаем активные ответы
+        let activeAnswers = answers.filter { !disabledAnswers.contains($0) }
         let correctAnswer = result.answer
-        audienceResults.append((answer: correctAnswer, percentage: 70))
         
-        let remainingAnswers = answers.filter { $0 != correctAnswer }
-        let remainingPercentage = 30
+        // Добавляем процент правильного ответа
+        audienceResults.append((answer: correctAnswer,
+                              percentage: Int(adjustedProbability * 100)))
         
-        if remainingAnswers.count > 0 {
-            var percentages = [Int]()
+        // Распределяем оставшиеся проценты между остальными активными ответами
+        let remainingPercentage = 100 - audienceResults[0].percentage
+        var percentages = [Int]()
+        
+        // Если есть другие активные ответы
+        let remainingActiveAnswers = activeAnswers.filter { $0 != correctAnswer }
+        if !remainingActiveAnswers.isEmpty {
+            var tempPercentages = [Int]()
+            var remaining = remainingPercentage
             
-            if remainingAnswers.count == 1 {
-                percentages = [remainingPercentage]
-            } else {
-                var tempPercentages = [Int]()
-                var remaining = remainingPercentage
-                
-                for i in 0..<remainingAnswers.count {
-                    if i == remainingAnswers.count - 1 {
-                        tempPercentages.append(remaining)
-                    } else {
-                        let maxPercent = max(1, remaining - (remainingAnswers.count - i - 1))
-                        let randomPercent = Int.random(in: 1...maxPercent)
-                        tempPercentages.append(randomPercent)
-                        remaining -= randomPercent
-                    }
+            for i in 0..<remainingActiveAnswers.count {
+                if i == remainingActiveAnswers.count - 1 {
+                    tempPercentages.append(remaining)
+                } else {
+                    let maxPercent = max(1, remaining - (remainingActiveAnswers.count - i - 1))
+                    let randomPercent = Int.random(in: 1...maxPercent)
+                    tempPercentages.append(randomPercent)
+                    remaining -= randomPercent
                 }
-                percentages = tempPercentages
             }
-            
-            for (index, answer) in remainingAnswers.enumerated() {
-                audienceResults.append((answer: answer, percentage: percentages[index]))
-            }
+            percentages = tempPercentages
         }
         
+        // Добавляем остальные активные ответы с их процентами
+        for (index, answer) in remainingActiveAnswers.enumerated() {
+            audienceResults.append((answer: answer, percentage: percentages[index]))
+        }
+        
+        // Сортируем результаты по убыванию процентов
         audienceResults.sort { $0.percentage > $1.percentage }
         
+        // Формируем строку с результатами только для активных ответов
         let resultString = audienceResults
             .map { "\($0.answer): \($0.percentage)%" }
             .joined(separator: "\n")
