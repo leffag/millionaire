@@ -37,10 +37,10 @@ final class HomeViewModel: ObservableObject {
         
         // Попытка восстановить сессию из стораджа, если в менеджере нет активной
         if gameManager.currentSession == nil,
-                   let savedSession = storage.loadGameSession(),
-                   savedSession.isFinished == false {
-                    gameManager.restoreSession(savedSession)
-                }
+           let savedSession = storage.loadGameSession(),
+           savedSession.isFinished == false {
+            gameManager.restoreSession(savedSession)
+        }
         
         updateViewState()
         
@@ -89,11 +89,11 @@ final class HomeViewModel: ObservableObject {
         let hasActive = gameManager.currentSession?.isFinished == false
         let hasScore = gameManager.bestScore > 0
         
-        viewMode = HomeViewMode(
-            hasActiveSession: gameManager.currentSession?.isFinished == false,
-            hasScore: gameManager.bestScore > 0
+        self.viewMode = HomeViewMode(
+            hasActiveSession: hasActive,
+            hasScore: hasScore
         )
-        bestScore = gameManager.bestScore
+        self.bestScore = gameManager.bestScore
     }
     
     private func startGame(type: GameType) async {
