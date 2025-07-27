@@ -56,12 +56,14 @@ final class GameViewModel: ObservableObject {
     /// Недоступные для выбора варианты ответов
     @Published private(set) var disabledAnswers: Set<String> = []
     
+    @Published var correctAnswer: String?
+    
     @Published var duration: String = "00:00"
     
     // Доп состояния для UI
     @Published private(set) var timerType: TimerType = .normal
     
-    @Published var correctAnswer: String?
+    @Published var answersForAudienceLifeline: String?
     @Published var selectedAnswer: String?
     @Published var answerResultState: AnswerResult?
     
@@ -292,8 +294,49 @@ final class GameViewModel: ObservableObject {
             // Подсказка недоступна, не делаем ничего
             return
         }
-        print(result)
-        // TODO: Реализация подсказки
+        
+        var audienceResults: [(answer: String, percentage: Int)] = []
+        
+        let correctAnswer = result.answer
+        audienceResults.append((answer: correctAnswer, percentage: 70))
+        
+        let remainingAnswers = answers.filter { $0 != correctAnswer }
+        let remainingPercentage = 30
+        
+        if remainingAnswers.count > 0 {
+            var percentages = [Int]()
+            
+            if remainingAnswers.count == 1 {
+                percentages = [remainingPercentage]
+            } else {
+                var tempPercentages = [Int]()
+                var remaining = remainingPercentage
+                
+                for i in 0..<remainingAnswers.count {
+                    if i == remainingAnswers.count - 1 {
+                        tempPercentages.append(remaining)
+                    } else {
+                        let maxPercent = max(1, remaining - (remainingAnswers.count - i - 1))
+                        let randomPercent = Int.random(in: 1...maxPercent)
+                        tempPercentages.append(randomPercent)
+                        remaining -= randomPercent
+                    }
+                }
+                percentages = tempPercentages
+            }
+            
+            for (index, answer) in remainingAnswers.enumerated() {
+                audienceResults.append((answer: answer, percentage: percentages[index]))
+            }
+        }
+        
+        audienceResults.sort { $0.percentage > $1.percentage }
+        
+        let resultString = audienceResults
+            .map { "\($0.answer): \($0.percentage)%" }
+            .joined(separator: "\n")
+        
+        answersForAudienceLifeline = resultString
     }
     
     func callYourFriendButtonTap() {
