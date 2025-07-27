@@ -67,10 +67,11 @@ final class HomeViewModel: ObservableObject {
         // Завершаем текущую сессию с текущим счетом
         if let session = gameManager.currentSession {
             gameManager.endGame(withScore: session.score)
+            
+            // Переходим к GameOver, а не на главный экран
+            navigationCoordinator.showGameOverAfterWithdrawal(session)
         }
-        
-        // Возвращаемся на главный экран через координатор
-        navigationCoordinator.popToRoot()
+    
     }
     
     // MARK: - Private Methods
