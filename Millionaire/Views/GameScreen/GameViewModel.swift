@@ -223,14 +223,14 @@ final class GameViewModel: ObservableObject {
         switch answerResult {
         case .correct:
             let prize = prizeCalculator.getPrizeAmount(for: currentQuestionIndex)
-            newSession.addScore(prize)
+            newSession.setScore(prize)
         case .incorrect:
             if mistakeAllowedUsed {
                 // Засчитываем как правильный, но отмечаем, что был ошибочный
                 mistakeUsedThisTurn = true
                 mistakeAllowedUsed = false // Сбросить после одного использования
                 let prize = prizeCalculator.getPrizeAmount(for: currentQuestionIndex)
-                newSession.addScore(prize)
+                newSession.setScore(prize)
                 answerResultState = .correct
             } else {
                 let checkpoint = prizeCalculator.getCheckpointPrizeAmount(before: currentQuestionIndex)
