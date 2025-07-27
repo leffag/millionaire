@@ -48,6 +48,11 @@ final class GameManager: ObservableObject {  // Управляет сессия�
         return initialSession
     }
     
+    /// Восстанавливает сохранённую сессию
+    func restoreSession(_ session: GameSession) {
+        self.currentSession = session
+    }
+    
     /// Актуализирует лучший результат при изменении сессии
     private func updateBestScoreIfNeeded() {
         // Результат применяем только для завершенной игры

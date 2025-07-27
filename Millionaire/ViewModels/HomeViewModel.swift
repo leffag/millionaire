@@ -18,6 +18,7 @@ final class HomeViewModel: ObservableObject {
     @Published var errorMessage: String = ""
     
     // MARK: - Dependencies
+    private let storage: IStorageService
     private var gameManager: GameManager
     private let navigationCoordinator: NavigationCoordinator
     
@@ -28,9 +29,19 @@ final class HomeViewModel: ObservableObject {
     
     // MARK: - Init
     init(gameManager: GameManager,
+         storage: IStorageService = StorageService.shared,
          navigationCoordinator: NavigationCoordinator) {
         self.gameManager = gameManager
+        self.storage = storage
         self.navigationCoordinator = navigationCoordinator
+        
+        // Попытка восстановить сессию из стораджа, если в менеджере нет активной
+        if gameManager.currentSession == nil,
+                   let savedSession = storage.loadGameSession(),
+                   savedSession.isFinished == false {
+                    gameManager.restoreSession(savedSession)
+                }
+        
         updateViewState()
         
         // Устанавливаем связь с координатором
@@ -75,6 +86,8 @@ final class HomeViewModel: ObservableObject {
     
     // MARK: - Private Methods
     private func updateViewState() {
+        let hasActive = gameManager.currentSession?.isFinished == false
+        let hasScore = gameManager.bestScore > 0
         
         viewMode = HomeViewMode(
             hasActiveSession: gameManager.currentSession?.isFinished == false,

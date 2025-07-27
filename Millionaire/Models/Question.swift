@@ -11,16 +11,16 @@ enum QuestionsAPI {
     static let baseURL = URL(string: "https://opentdb.com/api.php?amount=15&type=multiple")!
 }
 
-enum QuestionDifficulty: String, Decodable {
+enum QuestionDifficulty: String, Codable {
     case easy, medium, hard
 }
 
-struct QuestionsResponse: Decodable {
+struct QuestionsResponse: Codable {
     let responseCode: Int
     let results: [Question]
 }
 
-struct Question: Decodable, Hashable {
+struct Question: Codable, Hashable {
     let difficulty: QuestionDifficulty
     let category: String
     let question: String
