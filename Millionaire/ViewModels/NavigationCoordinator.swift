@@ -78,8 +78,18 @@ final class NavigationCoordinator: ObservableObject {
     func handleScoreboardClose(mode: GameViewModel.ScoreboardMode, session: GameSession) {
         switch mode {
         case .intermediate:
-            // В промежуточном режиме - возвращаемся к игре
-            popLast()
+            // Получаем актуальную сессию из GameManager
+            // Не просто popLast, а обновляем route
+            if let currentSession = gameManager?.currentSession {
+                // Удаляем скорборд
+                path.removeLast()
+                // Заменяем game route на актуальный
+                if !path.isEmpty {
+                    path[path.count - 1] = .game(currentSession)
+                }
+                
+            }
+            
         case .gameOver, .victory:
             // При окончании игры - переходим к GameOverView
             showGameOver(session, mode: mode)
@@ -118,6 +128,7 @@ final class NavigationCoordinator: ObservableObject {
                 .navigationBarBackButtonHidden(true)
             
         case .game(let session):
+
             GameScreen(
                 viewModel: createGameViewModel(for: session)
             )
